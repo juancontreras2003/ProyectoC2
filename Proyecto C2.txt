@@ -1,0 +1,3551 @@
+# =====================================================================
+#                      CIENCIAS DE LA COMPUTACIÓN II
+#                   UI Pygame + Árbol de Temáticas con Sims
+# =====================================================================
+
+import pygame
+import sys
+import bisect 
+
+from textwrap import wrap
+import tkinter as tk
+from tkinter import filedialog
+import pickle
+
+
+
+pygame.init()
+
+# ---------------------------------------------------------------------
+# ----- 0. CONSTANTES, COLORES, FUENTES, DISPLAY ----------------------
+# ---------------------------------------------------------------------
+
+MIN_W, MIN_H = 900, 540
+WIDTH, HEIGHT = 1100, 700
+SIDEBAR_W = 320
+HEADER_H = 60
+ROW_H = 30
+INDENT = 16
+
+BG = (237, 224, 185)
+WHITE = (255, 255, 255)
+TEXT = (30, 33, 36)
+SUBTEXT = (60, 64, 110)
+ACCENT = (140, 140, 140)
+DIVIDER = (210, 214, 220)
+HILITE = (235, 240, 246)
+
+SCROLLBAR_W = 10
+SCROLLBAR_MARGIN = 6
+SCROLLBAR_MIN_THUMB = 40
+SCROLLBAR_TRACK = (230, 233, 239)
+SCROLLBAR_THUMB = (180, 186, 197)
+
+AMBAR = (255, 223, 116)
+VERDE = (150, 250, 195)
+
+FONT_S = pygame.font.SysFont("Segoe UI", 16)
+FONT = pygame.font.SysFont("Segoe UI", 17)
+FONT_B = pygame.font.SysFont("Segoe UI", 18, bold=True)
+FONT_T = pygame.font.SysFont("Segoe UI", 28, bold=True)
+
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE | pygame.DOUBLEBUF)
+pygame.display.set_caption("Tematica: Ciencias de la computación II")
+
+# ---------------------------------------------------------------------
+# ----- 0.1 ASSETS -----------------------------------------------------
+# ---------------------------------------------------------------------
+
+background_img = pygame.image.load("C:\\Users\\Juan DIego C\\Documents\\Proyecto Ciencias II\\background.jpg")
+background_img = pygame.transform.scale(background_img, (WIDTH, HEIGHT))
+
+logo_img = pygame.image.load("logo.png")
+logo_img = pygame.transform.scale(logo_img, (300, 300))
+initial_title = "Ciencias de la Computación II"
+initial_desc = ""
+
+
+# ---------------------------------------------------------------------
+# ----- 1. ÁRBOL DE TEMAS (DATA) --------------------------------------
+# ---------------------------------------------------------------------
+TOPICS = [
+    {
+        "id": "1",
+        "label": "",
+        "title": "Algoritmos de búsqueda",
+        "desc": "",
+        "expanded": False,
+        "children": [
+            {
+                "id": "1.1",
+                "label": "",
+                "title": "Búsquedas Internas",
+                "desc": "",
+                "expanded": False,
+                "children": [
+                    {
+                        "id": "1.1.A",
+                        "label": "",
+                        "title": "Búsqueda Secuencial",
+                        "desc": "",
+                        "expanded": False,
+                        "children": []
+                    },
+                    
+                    {
+                        "id": "1.1.C",
+                        "label": "",
+                        "title": "Búsqueda Binaria",
+                        "desc": "",
+                        "expanded": False,
+                        "children": []
+                    },
+                    {
+                        "id": "1.1.D",
+                        "label": "",
+                        "title": "Funciones HASH",
+                        "desc": "",
+                        "expanded": False,
+                        "children": [
+                            {
+                                "id": "1.1.D.1",
+                                "label": "",
+                                "title": "Función Hash Mod",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.1.D.2",
+                                "label": "",
+                                "title": "Función Hash Cuadrado",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.1.D.3",
+                                "label": "",
+                                "title": "Función Hash Truncamiento",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.1.D.4",
+                                "label": "",
+                                "title": "Función Hash Plegamiento",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            }
+                        ]
+                    },
+                ],
+            },
+            {
+                "id": "1.2",
+                "label": "",
+                "title": "Otras Búsquedas Internas",
+                "desc": "",
+                "expanded": False,
+                "children": [
+                    {
+                        "id": "1.2.A",
+                        "label": "",
+                        "title": "Búsquedas por residuos",
+                        "desc": "",
+                        "expanded": False,
+                        "children": [
+                            {
+                                "id": "1.2.A.1",
+                                "label": "",
+                                "title": "Árboles de búsqueda digital",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.2.A.2",
+                                "label": "",
+                                "title": "Tries de búsquedas por residuos",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.2.A.3",
+                                "label": "",
+                                "title": "Árboles de búsquedas por residuos múltiples",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.2.A.4",
+                                "label": "",
+                                "title": "Árboles de Huffman",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "1.2.B",
+                        "label": "",
+                        "title": "Búsquedas por rangos",
+                        "desc": "",
+                        "expanded": False,
+                        "children": [
+                            {
+                                "id": "1.2.B.1",
+                                "label": "",
+                                "title": "Métodos elementales",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.2.B.2",
+                                "label": "",
+                                "title": "Métodos de la rejilla",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.2.B.3",
+                                "label": "",
+                                "title": "Arreglos 2D",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            }
+                        ]
+                    }
+                ],
+            },
+            {
+                "id": "1.3",
+                "label": "",
+                "title": "Búsquedas Externas",
+                "desc": "",
+                "expanded": False,
+                "children": [
+                    {
+                        "id": "1.3.1",
+                        "label": "",
+                        "title": "Secuencial",
+                        "desc": "",
+                        "expanded": False,
+                        "children": []
+                    },
+                    {
+                        "id": "1.3.2",
+                        "label": "",
+                        "title": "Binaria",
+                        "desc": "",
+                        "expanded": False,
+                        "children": []
+                    },
+                    {
+                        "id": "1.3.3",
+                        "label": "",
+                        "title": "Por transferencia de claves",
+                        "desc": "",
+                        "expanded": False,
+                        "children": [
+                            {
+                                "id": "1.3.3.A",
+                                "label": "",
+                                "title": "Función Modulo",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.3.3.B",
+                                "label": "",
+                                "title": "Función Cuadrado",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.3.3.C",
+                                "label": "",
+                                "title": "Función Truncamiento",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.3.3.D",
+                                "label": "",
+                                "title": "Función Plegamiento",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.3.3.E",
+                                "label": "",
+                                "title": "Función Transferencia de base - conversión",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                        ]
+                    },
+                ],
+            },
+            {
+                "id": "1.4",
+                "label": "",
+                "title": "Otras búsquedas externas",
+                "desc": "",
+                "expanded": False,
+                "children": [
+                    {
+                        "id": "1.4.1",
+                        "label": "",
+                        "title": "Dinámicas",
+                        "desc": "",
+                        "expanded": False,
+                        "children": [
+                            {
+                                "id": "1.4.1.A",
+                                "label": "",
+                                "title": "Expansiones parciales",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.4.1.B",
+                                "label": "",
+                                "title": "Expansiones totales",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.4.1.C",
+                                "label": "",
+                                "title": "Reducción Parcial",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.4.1.D",
+                                "label": "",
+                                "title": "Reducción Total",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "1.5",
+                "label": "",
+                "title": "Indices",
+                "desc": "",
+                "expanded": False,
+                "children": [
+                    {
+                        "id": "1.5.1",
+                        "label": "",
+                        "title": "Un solo nivel",
+                        "desc": "",
+                        "expanded": False,
+                        "children": [
+                            {
+                                "id": "1.5.1.A",
+                                "label": "",
+                                "title": "Primarios",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.5.1.B",
+                                "label": "",
+                                "title": "Secundarios",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.5.1.C",
+                                "label": "",
+                                "title": "Agrupación",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.5.1.D",
+                                "label": "",
+                                "title": "Denso",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.5.1.E",
+                                "label": "",
+                                "title": "No denso",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                        ]
+                    },
+                    {
+                        "id": "1.5.2",
+                        "label": "",
+                        "title": "Multinivel",
+                        "desc": "",
+                        "expanded": False,
+                        "children": [
+                            {
+                                "id": "1.5.2.A",
+                                "label": "",
+                                "title": "Montado sobre primario",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.5.2.B",
+                                "label": "",
+                                "title": "Montado sobre secundario",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.5.2.C",
+                                "label": "",
+                                "title": "Denso",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                            {
+                                "id": "1.5.2.D",
+                                "label": "",
+                                "title": "No denso",
+                                "desc": "",
+                                "expanded": False,
+                                "children": []
+                            },
+                        ]
+                    },
+                ]
+            }
+        ]
+    },
+
+    {
+        "id": "2",
+        "label": "",
+        "title": "Grafos",
+        "desc": "",
+        "expanded": False,
+        "children": []
+    }
+]
+
+
+# ---------------------------------------------------------------------
+# ----- 2. UTILIDADES ÁRBOL Y LAYOUT ----------------------------------
+# ---------------------------------------------------------------------
+
+def traverse(nodes, level=0):
+    for n in nodes:
+        yield n, level
+        if n.get("expanded") and n.get("children"):
+            yield from traverse(n["children"], level + 1)
+
+def find_by_id(nodes, nid):
+    for n, _ in traverse(nodes):
+        if n["id"] == nid:
+            return n
+    return None
+
+def recalc_layout(w, h):
+    global WIDTH, HEIGHT, SIDEBAR_W, background_img
+    WIDTH, HEIGHT = max(MIN_W, w), max(MIN_H, h)
+    SIDEBAR_W = max(260, min(480, int(WIDTH * 0.29)))
+    # Reescalar fondo para nuevo tamaño
+    if background_img:
+        bg = pygame.image.load("C:\\Users\\Juan DIego C\\Documents\\Proyecto Ciencias II\\background.jpg")
+        background_img = pygame.transform.scale(bg, (WIDTH, HEIGHT))
+
+def draw_wrapped_text(surface, text, font, color, rect, line_h):
+    if not text:
+        return
+    max_chars = max(8, rect.w // 8)
+    lines = []
+    for p in text.split("\n"):
+        lines.extend(wrap(p, width=max_chars))
+    y = rect.y
+    for ln in lines:
+        img = font.render(ln, True, color)
+        surface.blit(img, (rect.x, y))
+        y += line_h
+
+def render_sidebar(scroll_y, selected_id):
+    sidebar = pygame.Surface((SIDEBAR_W, HEIGHT))
+    sidebar.blit(background_img, (0, 0))
+    pygame.draw.line(sidebar, DIVIDER, (SIDEBAR_W-1, 0), (SIDEBAR_W-1, HEIGHT), 2)
+    y = 10 - scroll_y
+    hitboxes = []
+    for node, level in traverse(TOPICS, level=0):
+        indent = 12 + level*INDENT
+        rect = pygame.Rect(6, y, SIDEBAR_W-12-SCROLLBAR_W-6, ROW_H)
+        bg = (235, 216, 162) if node["id"] == selected_id else (247, 234, 193)
+        pygame.draw.rect(sidebar, bg, rect, border_radius=8)
+        pygame.draw.rect(sidebar, DIVIDER, rect, 1, border_radius=8)
+        label = node.get("label","")
+        text = f"{label} {node['title']}".strip()
+        f = FONT_B if level <= 1 else FONT
+        text_surface = f.render(text, True, TEXT)
+        sidebar.blit(text_surface, (indent, y + 6))
+        hitboxes.append((pygame.Rect(rect.x, rect.y, rect.w, rect.h), node["id"]))
+        y += ROW_H + 4
+    content_h = y + scroll_y
+    return sidebar, hitboxes, content_h
+
+
+# ---------------------------------------------------------------------
+# ----- 3. MARCO DE SIMULACIONES --------------------------------------
+# ---------------------------------------------------------------------
+
+class Simulation:
+    def __init__(self, topic_id:str, title:str):
+        self.topic_id = topic_id
+        self.title = title
+
+    def on_select(self):
+        """Se llama al activarse la simulación."""
+        pass
+
+    def on_deselect(self):
+        """Se llama al desactivarse la simulación."""
+        pass
+
+    def handle_event(self, event, viewport_rect: pygame.Rect, window_offset: tuple[int,int]):
+        """Delegar eventos (ratón/teclado)."""
+        pass
+
+    def update(self, dt: float):
+        """Actualizar estado por frame."""
+        pass
+
+    def render(self, surface: pygame.Surface, sim_rect: pygame.Rect):
+        """Dibujar contenido de la simulación."""
+        label = FONT_B.render("Simulación", True, ACCENT)
+        surface.blit(label, (sim_rect.x + 16, sim_rect.y + 12))
+        pygame.draw.line(surface, DIVIDER, (sim_rect.x + 12, sim_rect.y + 48), (sim_rect.right - 12, sim_rect.y + 48), 1)
+        help_txt = "Simulación en preparación…"
+        surface.blit(FONT.render(help_txt, True, SUBTEXT), (sim_rect.x + 16, sim_rect.y + 56))
+
+class PlaceholderSim(Simulation):
+    def __init__(self, topic_id:str, title:str, message:str="Próximamente"):
+        super().__init__(topic_id, title)
+        self.message = message
+
+    def render(self, surface: pygame.Surface, sim_rect: pygame.Rect):
+        # Marco base
+        pygame.draw.rect(surface, (255, 248, 227), sim_rect, border_radius=10)
+        pygame.draw.rect(surface, DIVIDER, sim_rect, 1, border_radius=10)
+        # Título de la simulación
+        label = FONT_B.render(self.title, True, ACCENT)
+        surface.blit(label, (sim_rect.x + 16, sim_rect.y + 12))
+        pygame.draw.line(surface, DIVIDER, (sim_rect.x + 12, sim_rect.y + 48), (sim_rect.right - 12, sim_rect.y + 48), 1)
+        # Mensaje
+        surface.blit(FONT.render(self.message, True, SUBTEXT), (sim_rect.x + 16, sim_rect.y + 60))
+
+
+# ---------------------------------------------------------------------
+# ----- 4. WIDGETS PEQUEÑOS DE UI (COMPARTIDOS) -----------------------
+# ---------------------------------------------------------------------
+
+def draw_input_box(surface, x, y, width, height, text, font, color_text, color_border, active=True):
+    rect = pygame.Rect(x, y, width, height)
+    box_color = (255,255,255) if active else (245,245,245)
+    pygame.draw.rect(surface, box_color, rect, 0)
+    pygame.draw.rect(surface, color_border, rect, 2)
+    text_surface = font.render(text, True, color_text)
+    surface.blit(text_surface, (x+6, y+(height-text_surface.get_height())//2))
+    return rect
+
+class VerticalScrollbar:
+    def __init__(self, x, y, height, content_height):
+        self.rect = pygame.Rect(x, y, 18, height)
+        self.content_height = content_height
+        self.view_height = height
+        self.handle_height = max(30, height * height / content_height)
+        self.handle_rect = pygame.Rect(x, y, 18, self.handle_height)
+        self.dragging = False
+        self.drag_offset = 0
+
+    def update_content_height(self, content_height):
+        self.content_height = content_height
+        self.handle_height = max(30, self.view_height * self.view_height / content_height)
+        self.handle_rect.height = self.handle_height
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.handle_rect.collidepoint(event.pos):
+                self.dragging = True
+                self.drag_offset = event.pos[1] - self.handle_rect.y
+                return True
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            self.dragging = False
+            return True
+        elif event.type == pygame.MOUSEMOTION and self.dragging:
+            new_y = event.pos[1] - self.drag_offset
+            min_y = self.rect.y
+            max_y = self.rect.y + self.view_height - self.handle_height
+            self.handle_rect.y = max(min_y, min(max_y, new_y))
+            return True
+        elif event.type == pygame.MOUSEWHEEL:
+            # Mover el handle en proporción
+            scroll_amount = -event.y * 20
+            new_y = self.handle_rect.y + scroll_amount
+            min_y = self.rect.y
+            max_y = self.rect.y + self.view_height - self.handle_height
+            self.handle_rect.y = max(min_y, min(max_y, new_y))
+            return True
+        return False
+
+    def get_scroll(self):
+        max_scroll = self.content_height - self.view_height
+        if max_scroll <= 0:
+            return 0
+        rel = (self.handle_rect.y - self.rect.y) / (self.view_height - self.handle_height)
+        return rel * max_scroll
+
+    def draw(self, surface):
+        pygame.draw.rect(surface, (220,220,220), self.rect, border_radius=8)
+        pygame.draw.rect(surface, (120,120,120), self.handle_rect, border_radius=7)
+
+
+# ---------------------------------------------------------------------
+# ----- 5. SIMULACIONES ESPECÍFICAS -----------------------------------
+# ---------------------------------------------------------------------
+
+# ----- 1.1.C Búsqueda Binaria — UI completo desde el inicio ----------
+
+
+class BinarySearchSim(Simulation):
+    def __init__(self):
+        super().__init__("1.1.C", "Búsqueda Binaria")
+        # Estado de inputs
+        self.N_text = ""
+        self.count_text = ""    # "Tamaño de clave"
+        self.k_text = ""
+        self.N = None
+        self.max_keys = None  # longitud exigida de la clave
+        # Datos ORDENADOS
+        self.keys = []
+        self.status = ""
+        # Foco e interacciones
+        self.active_field = None  # "N" | "COUNT" | "K" | None
+        self._rect_N = None
+        self._rect_COUNT = None
+        self._rect_K = None
+        self._button_rects = []   # [(rect, action)]
+        # Layout
+        self.max_cols = 10
+        self.box_size = 50
+        self.spacing = 10
+        # Simulación búsqueda binaria
+        self.search = {
+            "active": False, "target": None,
+            "left": 0, "right": -1, "mid": None,
+            "timer": 0.0, "pause": 0.55, "result": None
+        }
+
+    def on_select(self):
+        self.N_text = self.count_text = self.k_text = ""
+        self.N = self.max_keys = None
+        self.keys = []
+        self.status = ""
+        self.active_field = None
+        self._rect_N = self._rect_COUNT = self._rect_K = None
+        self._button_rects = []
+        self.search.update({"active": False, "target": None, "left": 0, "right": -1, "mid": None, "timer": 0.0, "result": None})
+
+    # Animación de la búsqueda binaria
+    def update(self, dt: float):
+        if not self.search["active"]:
+            return
+        self.search["timer"] += dt
+        if self.search["timer"] < self.search["pause"]:
+            return
+        self.search["timer"] = 0.0
+
+        l, r = self.search["left"], self.search["right"]
+        k = self.search["target"]
+        if l > r:
+            self.search.update({"active": False, "mid": None, "result": None})
+            self.status = "No encontrada"
+            return
+
+        mid = (l + r) // 2
+        self.search["mid"] = mid
+        if self.keys[mid] == k:
+            self.search.update({"active": False, "result": mid})
+            self.status = f"Encontrada en índice {mid}"
+        elif self.keys[mid] < k:
+            self.search["left"] = mid + 1
+        else:
+            self.search["right"] = mid - 1
+
+    # ---------------- Eventos ----------------
+    def handle_event(self, event, viewport_rect, window_offset):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            offx, offy = window_offset
+            local_x = mx - offx
+            local_y = my - offy
+
+            self.active_field = None
+            if self._rect_N and self._rect_N.collidepoint(local_x, local_y):
+                self.active_field = "N"
+            elif self._rect_COUNT and self._rect_COUNT.collidepoint(local_x, local_y):
+                self.active_field = "COUNT"
+            elif self._rect_K and self._rect_K.collidepoint(local_x, local_y):
+                self.active_field = "K"
+
+            for rect, action in self._button_rects:
+                if rect.collidepoint(local_x, local_y):
+                    self._on_button(action)
+                    break
+
+        elif event.type == pygame.KEYDOWN:
+            if self.active_field is None:
+                return
+            if event.key == pygame.K_BACKSPACE:
+                if self.active_field == "N":
+                    self.N_text = self.N_text[:-1]
+                elif self.active_field == "COUNT":
+                    self.count_text = self.count_text[:-1]
+                elif self.active_field == "K":
+                    self.k_text = self.k_text[:-1]
+                return
+            if event.key == pygame.K_RETURN:
+                self._commit_active_field()
+                return
+            if event.unicode.isdigit():
+                if self.active_field == "N":
+                    self.N_text += event.unicode
+                elif self.active_field == "COUNT":
+                    self.count_text += event.unicode
+                elif self.active_field == "K":
+                    self.k_text += event.unicode
+
+    def _commit_active_field(self):
+        if self.active_field == "N" and self.N_text.isdigit() and int(self.N_text) > 0:
+            self.N = int(self.N_text)
+            self.status = f"Tamaño del arreglo fijado en {self.N}"
+        elif self.active_field == "COUNT" and self.count_text.isdigit() and int(self.count_text) > 0:
+            self.max_keys = int(self.count_text)  # longitud exigida
+            self.status = f"Tamaño de clave: {self.max_keys}"
+        elif self.active_field == "K" and self.k_text.isdigit():
+            self.status = f"Clave lista: {self.k_text}"
+
+    def guardar_estado(self, filepath=None):
+        data = {
+            "N": self.N,
+            "max_keys": self.max_keys,
+            "keys": self.keys.copy(),
+            "N_text": self.N_text,
+            "count_text": self.count_text,
+            "status": self.status
+        }
+        if filepath is None:
+            root = tk.Tk()
+            root.withdraw()
+            filepath = filedialog.asksaveasfilename(defaultextension=".bin",
+                                                    filetypes=[("Archivo binario", "*.bin")])
+            if not filepath:
+                self.status = "Guardado cancelado"
+                return False
+        try:
+            with open(filepath, "wb") as f:
+                pickle.dump(data, f)
+            self.status = "Arreglo guardado correctamente. Todo reiniciado."
+            self.on_select()  # <-- Esta línea hace el reinicio/reset
+            return True
+        except Exception as e:
+            self.status = f"Error al guardar: {e}"
+            return False
+
+    def cargar_estado(self, filepath=None):
+        if filepath is None:
+            root = tk.Tk()
+            root.withdraw()
+            filepath = filedialog.askopenfilename(filetypes=[("Archivo binario", "*.bin")])
+            if not filepath:
+                self.status = "Carga cancelada"
+                return False
+        try:
+            with open(filepath, "rb") as f:
+                data = pickle.load(f)
+            # Asigna los datos cargados
+            self.N = data.get("N", None)
+            self.max_keys = data.get("max_keys", None)
+            self.keys = data.get("keys", []).copy()
+            self.N_text = data.get("N_text", "")
+            self.count_text = data.get("count_text", "")
+            self.status = "Arreglo cargado correctamente"
+            return True
+        except Exception as e:
+            self.status = f"Error al cargar: {e}"
+            return False
+
+    # ---------------- Acciones de botones ----------------
+    def _on_button(self, action):
+        if action == "INSERTAR":
+            if self.N is None:
+                self.status = "Defina R (tamaño del arreglo)"; return
+            if self.max_keys is None:
+                self.status = "Defina Tamaño de clave"; return
+            if not self.k_text.isdigit():
+                self.status = "Ingrese clave numérica"; return
+
+            # Validación de longitud exacta
+            if len(self.k_text) > self.max_keys:
+                self.status = f"La clave tiene MÁS de {self.max_keys} dígitos"; return
+            if len(self.k_text) < self.max_keys:
+                self.status = f"La clave tiene MENOS de {self.max_keys} dígitos"; return
+
+            # Capacidad y duplicados
+            if len(self.keys) >= self.N:
+                self.status = "Arreglo lleno"; return
+
+            k = int(self.k_text)
+            i = bisect.bisect_left(self.keys, k)  # búsqueda en orden
+            if i < len(self.keys) and self.keys[i] == k:
+                self.status = "La clave ya existe en el arreglo"; return
+
+            bisect.insort(self.keys, k)  # inserta manteniendo orden
+            self.k_text = ""
+            self.status = f"Insertada, total {len(self.keys)}/{self.N}"
+            self.search.update({"active": False, "mid": None, "result": None})  # cancelar animación
+
+        elif action == "BUSCAR":
+            if not self.keys:
+                self.status = "Arreglo vacío"; return
+            if not self.k_text.isdigit():
+                self.status = "Ingrese clave numérica"; return
+            if self.max_keys is not None:
+                if len(self.k_text) > self.max_keys:
+                    self.status = f"La clave tiene MÁS de {self.max_keys} dígitos"; return
+                if len(self.k_text) < self.max_keys:
+                    self.status = f"La clave tiene MENOS de {self.max_keys} dígitos"; return
+
+            k = int(self.k_text)
+            self.search.update({
+                "active": True, "target": k,
+                "left": 0, "right": len(self.keys) - 1,
+                "mid": None, "timer": 0.0, "result": None
+            })
+            self.status = "Buscando (binaria)..."
+
+        elif action == "ELIMINAR":
+            if not self.k_text.isdigit():
+                self.status = "Ingrese clave numérica"; return
+            if self.max_keys is not None:
+                if len(self.k_text) > self.max_keys:
+                    self.status = f"La clave tiene MÁS de {self.max_keys} dígitos"; return
+                if len(self.k_text) < self.max_keys:
+                    self.status = f"La clave tiene MENOS de {self.max_keys} dígitos"; return
+
+            k = int(self.k_text)
+            i = bisect.bisect_left(self.keys, k)
+            if i < len(self.keys) and self.keys[i] == k:
+                self.keys.pop(i)
+                self.status = "Eliminada"
+            else:
+                self.status = "No estaba en el arreglo"
+            self.search.update({"active": False, "mid": None, "result": None})
+
+        elif action == "SAVE":
+            self.guardar_estado()
+
+        elif action == "LOAD":
+            self.cargar_estado()
+
+        elif action == "CLEAN":
+            self.N_text = ""
+            self.count_text = ""   
+            self.k_text = ""
+            self.N = None
+            self.max_keys = None    
+            self.keys = []
+            self.status = ""
+            self.keys = []
+            self.status = ""
+            self.search.update({"active": False, "mid": None, "result": None})
+
+    # ---------------- Dibujo ----------------
+    def render(self, surface: pygame.Surface, sim_rect: pygame.Rect):
+        # Panel base
+        pygame.draw.rect(surface, (255, 248, 227), sim_rect, border_radius=10)
+        pygame.draw.rect(surface, DIVIDER, sim_rect, 1, border_radius=10)
+
+        base_x = sim_rect.x + 24
+        y = sim_rect.y + 18
+
+        # Título
+        title = FONT_B.render(self.title, True, ACCENT)
+        surface.blit(title, (base_x, y))
+        y += 36
+        pygame.draw.line(surface, DIVIDER, (sim_rect.x + 12, y), (sim_rect.right - 12, y), 1)
+        y += 12
+
+        lbl_N = FONT.render("Tamaño del Arreglo (R):", True, SUBTEXT)
+        lbl_C = FONT.render("Tamaño de clave:", True, SUBTEXT)
+        lbl_K = FONT.render("Clave:", True, SUBTEXT)
+        surface.blit(lbl_N, (base_x, y))
+        surface.blit(lbl_C, (base_x + 360, y))
+        y += 6
+
+        self._rect_N = draw_input_box(surface, base_x, y + 18, 140, 36, self.N_text, FONT, TEXT, ACCENT, self.active_field == "N")
+        self._rect_COUNT = draw_input_box(surface, base_x + 360, y + 18, 140, 36, self.count_text, FONT, TEXT, ACCENT, self.active_field == "COUNT")
+
+        surface.blit(lbl_K, (base_x, y + 70))
+        self._rect_K = draw_input_box(surface, base_x, y + 94, 140, 36, self.k_text, FONT, TEXT, ACCENT, self.active_field == "K")
+
+        # Botonera
+        buttons_y = y + 150
+        pad = 10
+        bx = base_x
+        bw, bh = 120, 34
+        labels = [
+            ("Insertar", "INSERTAR"),
+            ("Buscar", "BUSCAR"),
+            ("Eliminar", "ELIMINAR"),
+            ("Guardar ", "SAVE"),
+            ("Recuperar ", "LOAD"),
+            ("Limpiar", "CLEAN"),
+        ]
+        self._button_rects = []
+        for text, action in labels:
+            rect = pygame.Rect(bx, buttons_y, bw, bh)
+            pygame.draw.rect(surface, (245,245,245), rect, border_radius=6)
+            pygame.draw.rect(surface, DIVIDER, rect, 1, border_radius=6)
+            txt = FONT_S.render(text, True, TEXT)
+            surface.blit(txt, (rect.x + (bw - txt.get_width())//2, rect.y + (bh - txt.get_height())//2))
+            self._button_rects.append((rect, action))
+            bx += bw + pad
+            if bx + bw > sim_rect.right - 24:
+                bx = base_x
+                buttons_y += bh + pad
+
+        if self.status:
+            surface.blit(FONT.render(self.status, True, SUBTEXT), (base_x, buttons_y + bh + 10))
+
+        # Grilla inferior (ordenada y resaltos de búsqueda)
+        grid_top = buttons_y + bh + 48
+        start_x = base_x
+        start_y = grid_top
+
+        if self.N:
+            for idx in range(self.N):
+                fila = idx // self.max_cols
+                col = idx % self.max_cols
+                rx = start_x + col * self.box_size   # Sin spacing para cuadros pegados
+                ry = start_y + fila * (self.box_size + self.spacing)   # Si quieres sin espacio fila también cambiar aquí
+                rect = pygame.Rect(rx, ry, self.box_size, self.box_size)
+
+                # Colores por defecto
+                fill = None
+                border = ACCENT  
+
+                # Resaltar el índice actual en búsqueda (ámbar)
+                if self.search["active"] and self.search["mid"] == idx:
+                    fill = (255, 223, 100)
+                    border = (230, 180, 60)
+                # Resultado encontrado (verde)
+                if self.search["result"] is not None and self.search["result"] == idx:
+                    fill = (100, 240, 160)
+                    border = (0, 160, 90)
+
+                if fill:
+                    pygame.draw.rect(surface, fill, rect)
+                pygame.draw.rect(surface, border, rect, 2)
+
+                # Texto de la clave
+                if idx < len(self.keys):
+                    text_to_show = str(self.keys[idx]).zfill(self.max_keys or 1)
+                    val_img = FONT.render(text_to_show, True, TEXT)
+                    val_rect = val_img.get_rect(center=rect.center)
+                    surface.blit(val_img, val_rect)
+
+
+
+
+# ----- 1.1.A Búsqueda Secuencial ------------------------------------
+
+class SequentialSearchSim(Simulation):
+    def __init__(self):
+        super().__init__("1.1.A", "Búsqueda Secuencial")
+        # Estado de inputs
+        self.N_text = ""
+        self.count_text = ""    # "Tamaño de clave"
+        self.k_text = ""
+        self.N = None
+        self.max_keys = None    # longitud exacta exigida
+        # Datos (orden = inserción)
+        self.keys = []
+        self.status = ""
+
+        # Foco e interacciones
+        self.active_field = None  # "N" | "COUNT" | "K" | None
+        self._rect_N = None
+        self._rect_COUNT = None
+        self._rect_K = None
+        self._button_rects = []   # [(rect, action)]
+
+        # Layout
+        self.max_cols = 10
+        self.box_size = 50
+        self.spacing = 10
+
+        # Simulación secuencial
+        self.search = {
+            "active": False, "target": None,
+            "idx": 0, "result": None,
+            "timer": 0.0, "pause": 0.55
+        }
+
+    def on_select(self):
+        self.N_text = self.count_text = self.k_text = ""
+        self.N = self.max_keys = None
+        self.keys = []
+        self.status = ""
+        self.active_field = None
+        self._rect_N = self._rect_COUNT = self._rect_K = None
+        self._button_rects = []
+        self.search.update({"active": False, "target": None, "idx": 0, "result": None, "timer": 0.0})
+
+    # Avance de animación secuencial
+    def update(self, dt: float):
+        if not self.search["active"]:
+            return
+        self.search["timer"] += dt
+        if self.search["timer"] < self.search["pause"]:
+            return
+        self.search["timer"] = 0.0
+
+        i = self.search["idx"]
+        k = self.search["target"]
+        if i >= len(self.keys):
+            self.search.update({"active": False, "result": None})
+            self.status = "No encontrada"
+            return
+
+        if self.keys[i] == k:
+            self.search.update({"active": False, "result": i})
+            self.status = f"Encontrada en índice {i}"
+        else:
+            self.search["idx"] = i + 1
+
+    # ---------------- Eventos ----------------
+    def handle_event(self, event, viewport_rect, window_offset):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            offx, offy = window_offset
+            local_x = mx - offx
+            local_y = my - offy
+
+            self.active_field = None
+            if self._rect_N and self._rect_N.collidepoint(local_x, local_y):
+                self.active_field = "N"
+            elif self._rect_COUNT and self._rect_COUNT.collidepoint(local_x, local_y):
+                self.active_field = "COUNT"
+            elif self._rect_K and self._rect_K.collidepoint(local_x, local_y):
+                self.active_field = "K"
+
+            for rect, action in self._button_rects:
+                if rect.collidepoint(local_x, local_y):
+                    self._on_button(action)
+                    break
+
+        elif event.type == pygame.KEYDOWN:
+            if self.active_field is None:
+                return
+            if event.key == pygame.K_BACKSPACE:
+                if self.active_field == "N":
+                    self.N_text = self.N_text[:-1]
+                elif self.active_field == "COUNT":
+                    self.count_text = self.count_text[:-1]
+                elif self.active_field == "K":
+                    self.k_text = self.k_text[:-1]
+                return
+            if event.key == pygame.K_RETURN:
+                self._commit_active_field()
+                return
+            if event.unicode.isdigit():
+                if self.active_field == "N":
+                    self.N_text += event.unicode
+                elif self.active_field == "COUNT":
+                    self.count_text += event.unicode
+                elif self.active_field == "K":
+                    self.k_text += event.unicode
+
+    def _commit_active_field(self):
+        if self.active_field == "N" and self.N_text.isdigit() and int(self.N_text) > 0:
+            self.N = int(self.N_text)
+            self.status = f"Tamaño del arreglo fijado en {self.N}"
+        elif self.active_field == "COUNT" and self.count_text.isdigit() and int(self.count_text) > 0:
+            self.max_keys = int(self.count_text)  # longitud exigida
+            self.status = f"Tamaño de clave: {self.max_keys}"
+        elif self.active_field == "K" and self.k_text.isdigit():
+            self.status = f"Clave lista: {self.k_text}"
+
+    def guardar_estado(self, filepath=None):
+        data = {
+            "N": self.N,
+            "max_keys": self.max_keys,
+            "keys": self.keys.copy(),
+            "N_text": self.N_text,
+            "count_text": self.count_text,
+            "status": self.status
+        }
+        if filepath is None:
+            root = tk.Tk()
+            root.withdraw()
+            filepath = filedialog.asksaveasfilename(defaultextension=".bin",
+                                                    filetypes=[("Archivo binario", "*.bin")])
+            if not filepath:
+                self.status = "Guardado cancelado"
+                return False
+        try:
+            with open(filepath, "wb") as f:
+                pickle.dump(data, f)
+            self.status = "Arreglo guardado correctamente y reiniciado."
+            self.on_select()  # Reinicia simulador al guardar
+            return True
+        except Exception as e:
+            self.status = f"Error al guardar: {e}"
+            return False
+
+    def cargar_estado(self, filepath=None):
+        if filepath is None:
+            root = tk.Tk()
+            root.withdraw()
+            filepath = filedialog.askopenfilename(filetypes=[("Archivo binario", "*.bin")])
+            if not filepath:
+                self.status = "Carga cancelada"
+                return False
+        try:
+            with open(filepath, "rb") as f:
+                data = pickle.load(f)
+            # Asignación segura
+            self.N = data.get("N", None)
+            self.max_keys = data.get("max_keys", None)
+            self.keys = data.get("keys", []).copy()
+            self.N_text = data.get("N_text", "")
+            self.count_text = data.get("count_text", "")
+            self.status = "Arreglo cargado correctamente"
+            return True
+        except Exception as e:
+            self.status = f"Error al cargar: {e}"
+            return False
+
+    # ---------------- Acciones de botones ----------------
+    def _on_button(self, action):
+        if action == "INSERTAR":
+            if self.N is None:
+                self.status = "Defina R (tamaño del arreglo)"; return
+            if self.max_keys is None:
+                self.status = "Defina Tamaño de clave"; return
+            if not self.k_text.isdigit():
+                self.status = "Ingrese clave numérica"; return
+
+            # Validación de longitud exacta
+            if len(self.k_text) > self.max_keys:
+                self.status = f"La clave tiene MÁS de {self.max_keys} dígitos"; return
+            if len(self.k_text) < self.max_keys:
+                self.status = f"La clave tiene MENOS de {self.max_keys} dígitos"; return
+
+            if len(self.keys) >= self.N:
+                self.status = "Arreglo lleno"; return
+
+            k = int(self.k_text)
+            # Rechazar duplicados
+            if k in self.keys:
+                self.status = "La clave ya existe en el arreglo"; return
+
+            bisect.insort(self.keys, k)  # inserta manteniendo orden
+            self.k_text = ""
+            self.status = f"Insertada, total {len(self.keys)}/{self.N}"
+            # cancelar animación en curso si se modifica el arreglo
+            self.search.update({"active": False, "idx": 0, "result": None})
+
+        elif action == "BUSCAR":
+            if not self.keys:
+                self.status = "Arreglo vacío"; return
+            if not self.k_text.isdigit():
+                self.status = "Ingrese clave numérica"; return
+            if self.max_keys is not None:
+                if len(self.k_text) > self.max_keys:
+                    self.status = f"La clave tiene MÁS de {self.max_keys} dígitos"; return
+                if len(self.k_text) < self.max_keys:
+                    self.status = f"La clave tiene MENOS de {self.max_keys} dígitos"; return
+
+            k = int(self.k_text)
+            # Preparar animación secuencial
+            self.search.update({"active": True, "target": k, "idx": 0, "result": None, "timer": 0.0})
+            self.status = "Buscando (secuencial)..."
+
+        elif action == "ELIMINAR":
+            if not self.k_text.isdigit():
+                self.status = "Ingrese clave numérica"; return
+            if self.max_keys is not None:
+                if len(self.k_text) > self.max_keys:
+                    self.status = f"La clave tiene MÁS de {self.max_keys} dígitos"; return
+                if len(self.k_text) < self.max_keys:
+                    self.status = f"La clave tiene MENOS de {self.max_keys} dígitos"; return
+
+            k = int(self.k_text)
+            try:
+                i = self.keys.index(k)
+                self.keys.pop(i)
+                self.status = "Eliminada"
+            except ValueError:
+                self.status = "No estaba en el arreglo"
+            self.search.update({"active": False, "idx": 0, "result": None})
+
+        elif action == "SAVE":
+            self.guardar_estado()
+        elif action == "LOAD":
+            self.cargar_estado()
+        elif action == "CLEAN":
+            self.N_text = ""
+            self.count_text = ""   
+            self.k_text = ""
+            self.N = None
+            self.max_keys = None    
+            self.keys = []
+            self.status = ""
+            self.search.update({"active": False, "idx": 0, "result": None})
+
+    # ---------------- Dibujo ----------------
+    def render(self, surface: pygame.Surface, sim_rect: pygame.Rect):
+        # Panel base
+        pygame.draw.rect(surface, (255, 248, 227), sim_rect, border_radius=10)
+        pygame.draw.rect(surface, DIVIDER, sim_rect, 1, border_radius=10)
+
+        base_x = sim_rect.x + 24
+        y = sim_rect.y + 18
+
+        # Título
+        title = FONT_B.render(self.title, True, ACCENT)
+        surface.blit(title, (base_x, y))
+        y += 36
+        pygame.draw.line(surface, DIVIDER, (sim_rect.x + 12, y), (sim_rect.right - 12, y), 1)
+        y += 12
+
+        # Etiquetas e inputs
+        lbl_N = FONT.render("Tamaño del Arreglo (R):", True, SUBTEXT)
+        lbl_C = FONT.render("Tamaño de clave:", True, SUBTEXT)
+        lbl_K = FONT.render("Clave:", True, SUBTEXT)
+        surface.blit(lbl_N, (base_x, y))
+        surface.blit(lbl_C, (base_x + 360, y))
+        y += 6
+
+        self._rect_N = draw_input_box(surface, base_x, y + 18, 140, 36, self.N_text, FONT, TEXT, ACCENT, self.active_field == "N")
+        self._rect_COUNT = draw_input_box(surface, base_x + 360, y + 18, 140, 36, self.count_text, FONT, TEXT, ACCENT, self.active_field == "COUNT")
+
+        surface.blit(lbl_K, (base_x, y + 70))
+        self._rect_K = draw_input_box(surface, base_x, y + 94, 140, 36, self.k_text, FONT, TEXT, ACCENT, self.active_field == "K")
+
+        # Botonera
+        buttons_y = y + 150
+        pad = 10
+        bx = base_x
+        bw, bh = 120, 34
+        labels = [
+            ("Insertar", "INSERTAR"),
+            ("Buscar", "BUSCAR"),
+            ("Eliminar", "ELIMINAR"),
+            ("Guardar ", "SAVE"),
+            ("Recuperar ", "LOAD"),
+            ("Limpiar", "CLEAN"),
+        ]
+        self._button_rects = []
+        for text, action in labels:
+            rect = pygame.Rect(bx, buttons_y, bw, bh)
+            pygame.draw.rect(surface, (245,245,245), rect, border_radius=6)
+            pygame.draw.rect(surface, DIVIDER, rect, 1, border_radius=6)
+            txt = FONT_S.render(text, True, TEXT)
+            surface.blit(txt, (rect.x + (bw - txt.get_width())//2, rect.y + (bh - txt.get_height())//2))
+            self._button_rects.append((rect, action))
+            bx += bw + pad
+            if bx + bw > sim_rect.right - 24:
+                bx = base_x
+                buttons_y += bh + pad
+
+        if self.status:
+            surface.blit(FONT.render(self.status, True, SUBTEXT), (base_x, buttons_y + bh + 10))
+
+        # Grilla inferior: resalta idx actual en ámbar y encontrado en verde
+        grid_top = buttons_y + bh + 48
+        start_x = base_x
+        start_y = grid_top
+
+        if self.N:
+            for idx in range(self.N):
+                fila = idx // self.max_cols
+                col = idx % self.max_cols
+                rx = start_x + col * self.box_size  # No spacing
+                ry = start_y + fila * (self.box_size + self.spacing)  # spacing para filas (opcional)
+                rect = pygame.Rect(rx, ry, self.box_size, self.box_size)
+
+                # Determina colores para fondo (fill) y borde
+                fill = None
+                border = ACCENT
+
+                if self.search["active"] and self.search["idx"] == idx:
+                    fill = (255, 223, 100)  # color ámbar claro
+                    border = (230, 180, 60)
+                if self.search["result"] is not None and self.search["result"] == idx:
+                    fill = (100, 240, 160)  # color verde claro
+                    border = (0, 160, 90)
+
+                # Dibuja fondo relleno si aplica
+                if fill:
+                    pygame.draw.rect(surface, fill, rect)
+
+                # Dibuja borde
+                pygame.draw.rect(surface, border, rect, 2)
+
+                # Dibuja texto de la clave centrada
+                if idx < len(self.keys):
+                    text_to_show = str(self.keys[idx]).zfill(self.max_keys or 1)
+                    val_img = FONT.render(text_to_show, True, TEXT)
+                    val_rect = val_img.get_rect(center=rect.center)
+                    surface.blit(val_img, val_rect)
+
+
+
+
+
+
+
+# ----- 1.1.D.1 Función Hash Mod ----------------------------------------------------------------
+
+class HashModSim(Simulation):
+    def __init__(self):
+        super().__init__("1.1.D.1", "Función Hash Mod")
+        self.N_text = ""
+        self.keylen_text = ""
+        self.k_text = ""
+        self.N = None
+        self.key_len = None
+        self.table = []
+        self.TOMBSTONE = object()
+
+        self.status = ""
+        self.active_field = None
+        self._rect_N = self._rect_KEYLEN = self._rect_K = None
+        self._button_rects = []
+
+        self.collision_modes = [
+            ("Prueba lineal", "LINEAR"),
+            ("Prueba cuadrática", "QUADRATIC"),
+            ("Doble función Hash", "DOUBLE")
+        ]
+        self.collision_mode = "LINEAR"
+        self.dropdown_open = False
+        self._rect_dd_main = None
+        self._rect_dd_items = []
+
+        self.search = {
+            "active": False, "target": None,
+            "probe": 0, "index": None, "result": None,
+            "timer": 0.0, "pause": 0.55, "visited": set()
+        }
+
+        self.scrollbar = None
+
+    def on_select(self):
+        self.N_text = self.keylen_text = self.k_text = ""
+        self.N = self.key_len = None
+        self.table = []
+        self.status = ""
+        self.active_field = None
+        self._button_rects = []
+        self.dropdown_open = False
+        self.search.update({
+            "active": False, "target": None,
+            "probe": 0, "index": None, "result": None,
+            "timer": 0.0, "visited": set()
+        })
+        self.scrollbar = None
+
+    def h1(self, k: int) -> int:
+        return k % self.N
+
+    def h2(self, k: int) -> int:
+        return 1 + (k % (self.N - 1 if self.N and self.N > 1 else 1))
+
+    def probe_index(self, base: int, k: int, i: int) -> int:
+        if self.collision_mode == "LINEAR":
+            return (base + i) % self.N
+        elif self.collision_mode == "QUADRATIC":
+            return (base + i*i) % self.N
+        else:
+            return (base + i * self.h2(k)) % self.N
+
+    def _collision_label(self) -> str:
+        return {
+            "LINEAR": "Prueba lineal",
+            "QUADRATIC": "Prueba cuadrática",
+            "DOUBLE": "Doble función Hash",
+        }[self.collision_mode]
+
+    def update(self, dt: float):
+        if not self.search["active"]:
+            return
+        self.search["timer"] += dt
+        if self.search["timer"] < self.search["pause"]:
+            return
+        self.search["timer"] = 0.0
+
+        target = self.search["target"]
+        base = self.h1(target)
+        i = self.search["probe"]
+        if i >= self.N:
+            self.search.update({"active": False, "result": None})
+            self.status = "No encontrada"
+            return
+
+        idx = self.probe_index(base, target, i)
+        self.search["index"] = idx
+        self.search["visited"].add(idx)
+        slot = self.table[idx]
+
+        if slot is None:
+            self.search.update({"active": False, "result": None})
+            self.status = "No encontrada"
+        elif slot is self.TOMBSTONE:
+            self.search["probe"] = i + 1
+        elif slot == target:
+            self.search.update({"active": False, "result": idx})
+            self.status = f"Encontrada en índice {idx + 1}"
+        else:
+            self.search["probe"] = i + 1
+
+    def handle_event(self, event, viewport_rect, window_offset):
+        # 1) PRIMERO: Dejar que scrollbar maneje TODOS los eventos de mouse
+        if self.scrollbar and event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL):
+            if self.scrollbar.handle_event(event):
+                self.scroll_y = self.scrollbar.get_scroll()
+                return
+
+        # 2) Scroll con rueda antigua (botones 4/5)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button in (4, 5):
+            if self.scrollbar:
+                delta = -1 if event.button == 4 else 1
+                fake = pygame.event.Event(pygame.MOUSEWHEEL, {"y": delta})
+                self.scrollbar.handle_event(fake)
+                self.scroll_y = self.scrollbar.get_scroll()
+                return
+
+        # 3) Scroll con flechas
+        if event.type == pygame.KEYDOWN and event.key in (pygame.K_UP, pygame.K_DOWN):
+            if self.scrollbar:
+                delta = 1 if event.key == pygame.K_UP else -1
+                fake = pygame.event.Event(pygame.MOUSEWHEEL, {"y": delta})
+                self.scrollbar.handle_event(fake)
+                self.scroll_y = self.scrollbar.get_scroll()
+                return
+
+        # 4) DESPUÉS: Resto de eventos (dropdowns, inputs, botones)
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            offx, offy = window_offset
+            local_x = mx - offx
+            local_y = my - offy
+
+            if self._rect_dd_main and self._rect_dd_main.collidepoint(local_x, local_y):
+                self.dropdown_open = not self.dropdown_open
+                return
+            if self.dropdown_open:
+                for rect, value in self._rect_dd_items:
+                    if rect.collidepoint(local_x, local_y):
+                        self.collision_mode = value
+                        self.dropdown_open = False
+                        return
+                self.dropdown_open = False
+
+            self.active_field = None
+            if self._rect_N and self._rect_N.collidepoint(local_x, local_y):
+                self.active_field = "N"
+            elif self._rect_KEYLEN and self._rect_KEYLEN.collidepoint(local_x, local_y):
+                self.active_field = "KEYLEN"
+            elif self._rect_K and self._rect_K.collidepoint(local_x, local_y):
+                self.active_field = "K"
+
+            for rect, action in self._button_rects:
+                if rect.collidepoint(local_x, local_y):
+                    self._on_button(action)
+                    break
+
+        elif event.type == pygame.KEYDOWN:
+            if self.active_field is None:
+                return
+            if event.key == pygame.K_BACKSPACE:
+                if self.active_field == "N":
+                    self.N_text = self.N_text[:-1]
+                elif self.active_field == "KEYLEN":
+                    self.keylen_text = self.keylen_text[:-1]
+                elif self.active_field == "K":
+                    self.k_text = self.k_text[:-1]
+                return
+            if event.key == pygame.K_RETURN:
+                self._commit_active_field()
+                return
+            if event.unicode.isdigit():
+                if self.active_field == "N":
+                    self.N_text += event.unicode
+                elif self.active_field == "KEYLEN":
+                    self.keylen_text += event.unicode
+                elif self.active_field == "K":
+                    self.k_text += event.unicode
+
+    def _commit_active_field(self):
+        if self.active_field == "N" and self.N_text.isdigit() and int(self.N_text) > 0:
+            self.N = int(self.N_text)
+            self.table = [None] * self.N
+            self.status = f"Tamaño del arreglo fijado en {self.N}"
+            self.search.update({
+                "active": False, "probe": 0, "index": None, "result": None, "visited": set()
+            })
+            self.scrollbar = None
+        elif self.active_field == "KEYLEN" and self.keylen_text.isdigit() and int(self.keylen_text) > 0:
+            self.key_len = int(self.keylen_text)
+            self.status = f"Tamaño de clave: {self.key_len}"
+        elif self.active_field == "K" and self.k_text.isdigit():
+            self.status = f"Clave lista: {self.k_text}"
+
+    def _validate_key_text(self):
+        if not self.k_text.isdigit():
+            return False, "Ingrese clave numérica"
+        if self.key_len is None:
+            return False, "Defina Tamaño de clave"
+        if len(self.k_text) > self.key_len:
+            return False, f"La clave tiene MÁS de {self.key_len} dígitos"
+        if len(self.k_text) < self.key_len:
+            return False, f"La clave tiene MENOS de {self.key_len} dígitos"
+        return True, None
+
+    def _find_key(self, k):
+        if self.N is None:
+            return None
+        base = self.h1(k)
+        for i in range(self.N):
+            idx = self.probe_index(base, k, i)
+            slot = self.table[idx]
+            if slot is None:
+                return None
+            if slot is not self.TOMBSTONE and slot == k:
+                return idx
+        return None
+
+    def guardar_estado(self, filepath=None):
+        data = {
+            "N": self.N, "key_len": self.key_len, "table": self.table.copy(),
+            "collision_mode": self.collision_mode,
+            "N_text": self.N_text, "keylen_text": self.keylen_text, "status": self.status
+        }
+        if filepath is None:
+            root = tk.Tk(); root.withdraw()
+            filepath = filedialog.asksaveasfilename(defaultextension=".bin",
+                                                    filetypes=[("Archivo binario", "*.bin")])
+            if not filepath:
+                self.status = "Guardado cancelado"; return False
+        try:
+            with open(filepath, "wb") as f:
+                pickle.dump(data, f)
+            self.status = "Tabla hash guardada y simulador reiniciado."
+            self.on_select()
+            return True
+        except Exception as e:
+            self.status = f"Error al guardar: {e}"; return False
+
+    def cargar_estado(self, filepath=None):
+        if filepath is None:
+            root = tk.Tk(); root.withdraw()
+            filepath = filedialog.askopenfilename(filetypes=[("Archivo binario", "*.bin")])
+            if not filepath:
+                self.status = "Carga cancelada"; return False
+        try:
+            with open(filepath, "rb") as f:
+                data = pickle.load(f)
+            self.N = data.get("N"); self.key_len = data.get("key_len")
+            self.table = data.get("table", []).copy()
+            self.collision_mode = data.get("collision_mode", "LINEAR")
+            self.N_text = data.get("N_text", ""); self.keylen_text = data.get("keylen_text","")
+            self.status = "Tabla hash cargada correctamente"
+            self.search.update({
+                "active": False, "probe": 0, "index": None, "result": None, "visited": set()
+            })
+            self.scrollbar = None
+            return True
+        except Exception as e:
+            self.status = f"Error al cargar: {e}"; return False
+
+    def _on_button(self, action):
+        if action == "INSERTAR":
+            if self.N is None:
+                self.status = "Defina R (tamaño del arreglo)"; return
+            ok, msg = self._validate_key_text()
+            if not ok:
+                self.status = msg; return
+            k = int(self.k_text)
+            if self._find_key(k) is not None:
+                self.status = "La clave ya existe en el arreglo"; return
+            base = self.h1(k)
+            insert_idx = None; first_blocked = None; total_probes = 0
+            for i in range(self.N):
+                idx = self.probe_index(base,k,i); slot=self.table[idx]
+                if i==0 and slot is not None and slot is not self.TOMBSTONE:
+                    first_blocked=idx
+                if slot is None or slot is self.TOMBSTONE:
+                    insert_idx=idx; total_probes=i; break
+            if insert_idx is None:
+                self.status = "Arreglo lleno"; return
+            self.table[insert_idx]=k; self.k_text=""
+            if total_probes>0:
+                if first_blocked is None: first_blocked=base
+                self.status = f"Colisión en {first_blocked+1}; reubicado en {insert_idx+1} con {self._collision_label()}"
+            else:
+                self.status = f"Insertada en índice {insert_idx+1}"
+            self.search.update({"active":False,"probe":0,"index":insert_idx,"result":None,"visited":set()})
+
+        elif action=="BUSCAR":
+            if self.N is None or not any(x is not None and x is not self.TOMBSTONE for x in self.table):
+                self.status="Arreglo vacío";return
+            ok,msg=self._validate_key_text()
+            if not ok:
+                self.status=msg;return
+            k=int(self.k_text)
+            idx=self._find_key(k)
+            self.search.update({"active":False,"target":k,"index":idx,"result":idx,"visited":set()})
+            self.status = f"No encontrada" if idx is None else f"Encontrada en índice {idx+1}"
+
+        elif action=="ELIMINAR":
+            if self.N is None:
+                self.status="Defina R (tamaño del arreglo)";return
+            ok,msg=self._validate_key_text()
+            if not ok:
+                self.status=msg;return
+            k=int(self.k_text)
+            idx=self._find_key(k)
+            if idx is None:
+                self.status="No estaba en el arreglo"
+            else:
+                self.table[idx]=self.TOMBSTONE
+                self.status="Eliminada"
+            self.search.update({"active":False,"probe":0,"index":idx,"result":None,"visited":set()})
+
+        elif action=="SAVE":
+            self.guardar_estado()
+        elif action=="LOAD":
+            self.cargar_estado()
+        elif action=="CLEAN":
+            self.on_select()
+
+    def render(self, surface: pygame.Surface, sim_rect: pygame.Rect):
+    # Fondo y borde principal
+        pygame.draw.rect(surface, (255,248,227), sim_rect, border_radius=10)
+        pygame.draw.rect(surface, DIVIDER, sim_rect, 1, border_radius=10)
+
+        # Posiciones base
+        hash_left = sim_rect.x + 60
+        hash_width = 110
+        controls_x = hash_left + hash_width + 50
+
+        # Título y línea divisoria
+        y = sim_rect.y + 18
+        surface.blit(FONT_B.render(self.title, True, ACCENT), (controls_x, y))
+        y += 36
+        pygame.draw.line(surface, DIVIDER,
+                        (sim_rect.x+12, y), (sim_rect.right-12, y), 1)
+        y += 12
+
+        # Dibujar inputs, dropdowns y botones
+        lbl_N = FONT.render("Tamaño del Arreglo (R):", True, SUBTEXT)
+        lbl_C = FONT.render("Tamaño de clave:", True, SUBTEXT)
+        lbl_K = FONT.render("Clave:", True, SUBTEXT)
+        lbl_mode = FONT.render("Solución de colisiones:", True, SUBTEXT)
+
+        surface.blit(lbl_N, (controls_x, y))
+        surface.blit(lbl_C, (controls_x + 260, y))
+        y += 6
+
+        self._rect_N = draw_input_box(surface, controls_x, y+18, 140, 36,
+                                    self.N_text, FONT, TEXT, ACCENT,
+                                    self.active_field == "N")
+        self._rect_KEYLEN = draw_input_box(surface, controls_x+260, y+18, 140, 36,
+                                        self.keylen_text, FONT, TEXT, ACCENT,
+                                        self.active_field == "KEYLEN")
+
+        surface.blit(lbl_K, (controls_x, y+70))
+        self._rect_K = draw_input_box(surface, controls_x, y+94, 140, 36,
+                                    self.k_text, FONT, TEXT, ACCENT,
+                                    self.active_field == "K")
+
+        dd_x = controls_x + 260
+        surface.blit(lbl_mode, (dd_x, y+70))
+        dd_main = pygame.Rect(dd_x, y+94, 220, 36)
+        pygame.draw.rect(surface, (245,245,245), dd_main, border_radius=6)
+        pygame.draw.rect(surface, DIVIDER, dd_main, 1, border_radius=6)
+        sel_label = next(t for t,v in self.collision_modes if v == self.collision_mode)
+        surface.blit(FONT_S.render(sel_label, True, TEXT), (dd_main.x+8, dd_main.y+8))
+        pygame.draw.polygon(surface, TEXT, [
+            (dd_main.right-16, dd_main.y+14),
+            (dd_main.right-6,  dd_main.y+14),
+            (dd_main.right-11, dd_main.y+22)
+        ])
+        self._rect_dd_main = dd_main
+
+        buttons_y = y + 150
+        pad = 10
+        bx = controls_x
+        bw, bh = 120, 34
+        labels = [
+            ("Insertar", "INSERTAR"), ("Buscar", "BUSCAR"),
+            ("Eliminar", "ELIMINAR"), ("Guardar", "SAVE"),
+            ("Recuperar", "LOAD"), ("Limpiar", "CLEAN")
+        ]
+        self._button_rects = []
+        for text, action in labels:
+            rect = pygame.Rect(bx, buttons_y, bw, bh)
+            pygame.draw.rect(surface, (245,245,245), rect, border_radius=6)
+            pygame.draw.rect(surface, DIVIDER, rect, 1, border_radius=6)
+            txt = FONT_S.render(text, True, TEXT)
+            surface.blit(txt, (
+                rect.x + (bw-txt.get_width())//2,
+                rect.y + (bh-txt.get_height())//2
+            ))
+            self._button_rects.append((rect, action))
+            bx += bw + pad
+            if bx + bw > sim_rect.right - 24:
+                bx = controls_x
+                buttons_y += bh + pad
+
+        if self.status:
+            surface.blit(FONT.render(self.status, True, SUBTEXT),
+                        (controls_x, buttons_y + bh + 10))
+
+        # Dibujar contenedor de hash limitado a 20 slots visibles
+        N = self.N if self.N is not None else len(self.table)
+        if N > 0:
+            top_y = sim_rect.y + 120
+            max_h = 600  # altura máxima visible
+            max_slots = 20
+            visible_slots = min(N, max_slots)
+            slot_h = max_h / visible_slots
+            total_height = slot_h * N
+
+            # Borde del contenedor
+            pygame.draw.rect(surface, ACCENT,
+                            (hash_left, top_y, hash_width, max_h),
+                            2, border_radius=6)
+
+            # Configurar scrollbar con toda la altura real
+            if self.scrollbar is None:
+                self.scrollbar = VerticalScrollbar(
+                    hash_left+hash_width+6, top_y, max_h, total_height)
+            else:
+                self.scrollbar.rect.y = top_y
+                self.scrollbar.view_height = max_h
+                self.scrollbar.update_content_height(total_height)
+            scroll_y = self.scrollbar.get_scroll()
+
+            # Clip para slots
+            clip = pygame.Rect(hash_left, top_y, hash_width, max_h)
+            surface.set_clip(clip)
+
+            # Líneas y contenido de cada slot
+            for i in range(N+1):
+                y_line = top_y + i*slot_h - scroll_y
+                pygame.draw.line(surface, ACCENT,
+                                (hash_left, y_line),
+                                (hash_left+hash_width, y_line), 1)
+            for idx in range(N):
+                y0 = top_y + idx*slot_h - scroll_y
+                if y0+slot_h < top_y or y0 > top_y+max_h:
+                    continue
+                r = pygame.Rect(hash_left, y0, hash_width, slot_h)
+                val = self.table[idx] if idx < len(self.table) else None
+                if val is self.TOMBSTONE:
+                    dash = FONT_S.render("-", True, (160,160,160))
+                    surface.blit(dash, dash.get_rect(center=r.center))
+                elif val is not None:
+                    fill,border = None,ACCENT
+                    if self.search["active"] and self.search["index"]==idx:
+                        fill,border=(255,223,100),(230,180,60)
+                    if self.search["result"]==idx:
+                        fill,border=(100,240,160),(0,160,90)
+                    if fill:
+                        pygame.draw.rect(surface, fill, r)
+                    pygame.draw.rect(surface, border, r, 2)
+                    txt = FONT.render(str(val).zfill(self.key_len or 1), True, TEXT)
+                    surface.blit(txt, txt.get_rect(center=r.center))
+
+            surface.set_clip(None)
+
+            # Índices visibles
+            occupied = {i for i,v in enumerate(self.table)
+                        if v not in (None, self.TOMBSTONE)}
+            visibles = occupied | {0, N-1} | set(range(0, N, 10))
+            for idx in sorted(visibles):
+                y0 = top_y + idx*slot_h - scroll_y
+                mid = y0 + slot_h/2
+                if top_y <= mid <= top_y+max_h:
+                    lbl = FONT_S.render(str(idx+1), True, TEXT)
+                    surface.blit(lbl, lbl.get_rect(midright=(hash_left-8, mid)))
+
+            # Dibujar scrollbar
+            self.scrollbar.draw(surface)
+
+        # Dropdown items
+        self._rect_dd_items = []
+        if self.dropdown_open:
+            opt_y = dd_main.bottom + 2
+            for t,v in self.collision_modes:
+                r = pygame.Rect(dd_x, opt_y, 220, 28)
+                pygame.draw.rect(surface, (255,255,255), r)
+                pygame.draw.rect(surface, DIVIDER, r, 1)
+                surface.blit(FONT_S.render(t, True, TEXT), (r.x+8, r.y+6))
+                self._rect_dd_items.append((r, v))
+                opt_y += 28
+
+
+
+
+
+# ----- 1.1.D.2 Función Hash Cuadrado (Mid-Square) --------------------
+
+
+class HashSquareSim(Simulation):
+    """Simulación de función hash cuadrado medio"""
+    
+    def __init__(self):
+        super().__init__("1.1.D.2", "Función Hash Cuadrado")
+        self.N_text = ""
+        self.keylen_text = ""
+        self.k_text = ""
+        self.N = None
+        self.key_len = None
+        self.table = []
+        self.TOMBSTONE = object()
+
+        self.status = ""
+        self.active_field = None
+        self._rect_N = self._rect_KEYLEN = self._rect_K = None
+        self._button_rects = []
+
+        self.collision_modes = [
+            ("Prueba lineal", "LINEAR"),
+            ("Prueba cuadrática", "QUADRATIC"),
+            ("Doble función Hash", "DOUBLE")
+        ]
+        self.collision_mode = "LINEAR"
+        self.dropdown_open = False
+        self._rect_dd_main = None
+        self._rect_dd_items = []
+
+        self.search = {
+            "result": None, "index": None
+        }
+
+        self.scrollbar = None
+
+    def on_select(self):
+        self.N_text = self.keylen_text = self.k_text = ""
+        self.N = self.key_len = None
+        self.table = []
+        self.status = ""
+        self.active_field = None
+        self._rect_N = self._rect_KEYLEN = self._rect_K = None
+        self._button_rects = []
+        self.dropdown_open = False
+        self._rect_dd_main = None
+        self._rect_dd_items = []
+        self.collision_mode = "LINEAR"
+        self.search = {"result": None, "index": None}
+        self.scrollbar = None
+
+    def h1(self, k: int) -> int:
+        """Hash base cuadrado medio"""
+        # r = número de dígitos que caben en N-1 (base 10)
+        r = max(1, len(str(self.N - 1))) if self.N else 1
+        sq = str(k * k)
+        
+        # Asegurar que haya al menos 2*r dígitos para extraer el centro
+        sq = sq.zfill(max(2 * r, len(sq)))
+        
+        # Extraer r dígitos del centro
+        start = (len(sq) - r) // 2
+        mid_digits = int(sq[start:start + r])
+        return mid_digits % self.N
+
+    def h2(self, k: int) -> int:
+        return 1 + (k % (self.N - 1 if self.N and self.N > 1 else 1))
+
+    def probe_index(self, base: int, k: int, i: int) -> int:
+        if self.collision_mode == "LINEAR":
+            return (base + i) % self.N
+        elif self.collision_mode == "QUADRATIC":
+            return (base + i * i) % self.N
+        else:  # DOUBLE
+            return (base + i * self.h2(k)) % self.N
+
+    def _collision_label(self) -> str:
+        return {
+            "LINEAR": "Prueba lineal",
+            "QUADRATIC": "Prueba cuadrática",
+            "DOUBLE": "Doble función Hash",
+        }[self.collision_mode]
+
+    def handle_event(self, event, viewport_rect, window_offset):
+        # Primero, manejar eventos del scrollbar
+        if self.scrollbar and self.scrollbar.handle_event(event):
+            return
+
+        # Scroll con botones 4/5
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button in (4, 5):
+            if self.scrollbar:
+                delta = -1 if event.button == 4 else 1
+                fake = pygame.event.Event(pygame.MOUSEWHEEL, {"y": delta})
+                self.scrollbar.handle_event(fake)
+                return
+
+        # Scroll con flechas
+        if event.type == pygame.KEYDOWN and event.key in (pygame.K_UP, pygame.K_DOWN):
+            if self.scrollbar:
+                delta = 1 if event.key == pygame.K_UP else -1
+                fake = pygame.event.Event(pygame.MOUSEWHEEL, {"y": delta})
+                self.scrollbar.handle_event(fake)
+                return
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            offx, offy = window_offset
+            local_x = mx - offx
+            local_y = my - offy
+
+            if self._rect_dd_main and self._rect_dd_main.collidepoint(local_x, local_y):
+                self.dropdown_open = not self.dropdown_open
+                return
+            if self.dropdown_open:
+                for rect, value in self._rect_dd_items:
+                    if rect.collidepoint(local_x, local_y):
+                        self.collision_mode = value
+                        self.dropdown_open = False
+                        return
+                self.dropdown_open = False
+
+            self.active_field = None
+            if self._rect_N and self._rect_N.collidepoint(local_x, local_y):
+                self.active_field = "N"
+            elif self._rect_KEYLEN and self._rect_KEYLEN.collidepoint(local_x, local_y):
+                self.active_field = "KEYLEN"
+            elif self._rect_K and self._rect_K.collidepoint(local_x, local_y):
+                self.active_field = "K"
+
+            for rect, action in self._button_rects:
+                if rect.collidepoint(local_x, local_y):
+                    self._on_button(action)
+                    break
+
+        elif event.type == pygame.KEYDOWN:
+            if self.active_field is None:
+                return
+            if event.key == pygame.K_BACKSPACE:
+                if self.active_field == "N":
+                    self.N_text = self.N_text[:-1]
+                elif self.active_field == "KEYLEN":
+                    self.keylen_text = self.keylen_text[:-1]
+                elif self.active_field == "K":
+                    self.k_text = self.k_text[:-1]
+                return
+            if event.key == pygame.K_RETURN:
+                self._commit_active_field()
+                return
+            if event.unicode.isdigit():
+                if self.active_field == "N":
+                    self.N_text += event.unicode
+                elif self.active_field == "KEYLEN":
+                    self.keylen_text += event.unicode
+                elif self.active_field == "K":
+                    self.k_text += event.unicode
+
+    def _commit_active_field(self):
+        if self.active_field == "N" and self.N_text.isdigit() and int(self.N_text) > 0:
+            self.N = int(self.N_text)
+            self.table = [None] * self.N
+            self.status = f"Tamaño del arreglo fijado en {self.N}"
+            self.search = {"result": None, "index": None}
+            self.scrollbar = None
+        elif self.active_field == "KEYLEN" and self.keylen_text.isdigit() and int(self.keylen_text) > 0:
+            self.key_len = int(self.keylen_text)
+            self.status = f"Tamaño de clave: {self.key_len}"
+        elif self.active_field == "K" and self.k_text.isdigit():
+            self.status = f"Clave lista: {self.k_text}"
+
+    def _validate_key_text(self):
+        if not self.k_text.isdigit():
+            return False, "Ingrese clave numérica"
+        if self.key_len is None:
+            return False, "Defina Tamaño de clave"
+        if len(self.k_text) > self.key_len:
+            return False, f"La clave tiene MÁS de {self.key_len} dígitos"
+        if len(self.k_text) < self.key_len:
+            return False, f"La clave tiene MENOS de {self.key_len} dígitos"
+        return True, None
+
+    def _find_key(self, k):
+        if self.N is None:
+            return None
+        base = self.h1(k)
+        for i in range(self.N):
+            idx = self.probe_index(base, k, i)
+            slot = self.table[idx]
+            if slot is None:
+                return None
+            if slot is not self.TOMBSTONE and slot == k:
+                return idx
+        return None
+
+    def guardar_estado(self, filepath=None):
+        data = {
+            "N": self.N, "key_len": self.key_len, "N_text": self.N_text,
+            "keylen_text": self.keylen_text, "k_text": self.k_text,
+            "table": self.table.copy(), "collision_mode": self.collision_mode,
+            "status": self.status
+        }
+        if filepath is None:
+            root = tk.Tk()
+            root.withdraw()
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".bin",
+                filetypes=[("Archivo binario", "*.bin")]
+            )
+            if not filepath:
+                self.status = "Guardado cancelado"
+                return False
+        try:
+            with open(filepath, "wb") as f:
+                pickle.dump(data, f)
+            self.status = "Tabla hash cuadrado guardada y simulador reiniciado."
+            self.on_select()
+            return True
+        except Exception as e:
+            self.status = f"Error al guardar: {e}"
+            return False
+
+    def cargar_estado(self, filepath=None):
+        if filepath is None:
+            root = tk.Tk()
+            root.withdraw()
+            filepath = filedialog.askopenfilename(
+                filetypes=[("Archivo binario", "*.bin")]
+            )
+            if not filepath:
+                self.status = "Carga cancelada"
+                return False
+        try:
+            with open(filepath, "rb") as f:
+                data = pickle.load(f)
+            self.N = data.get("N", None)
+            self.key_len = data.get("key_len", None)
+            self.N_text = data.get("N_text", "")
+            self.keylen_text = data.get("keylen_text", "")
+            self.k_text = data.get("k_text", "")
+            self.table = data.get("table", []).copy()
+            self.collision_mode = data.get("collision_mode", "LINEAR")
+            self.status = "Tabla hash cuadrado cargada correctamente"
+            return True
+        except Exception as e:
+            self.status = f"Error al cargar: {e}"
+            return False
+
+    def _on_button(self, action):
+        if action == "INSERTAR":
+            if self.N is None:
+                self.status = "Defina R (tamaño del arreglo)"
+                return
+            ok, msg = self._validate_key_text()
+            if not ok:
+                self.status = msg
+                return
+            k = int(self.k_text)
+            if self._find_key(k) is not None:
+                self.status = "La clave ya existe en el arreglo"
+                return
+            base = self.h1(k)
+            insert_idx = None
+            first_blocked = None
+            total_probes = 0
+            for i in range(self.N):
+                idx = self.probe_index(base, k, i)
+                slot = self.table[idx]
+                if i == 0 and slot is not None and slot is not self.TOMBSTONE:
+                    first_blocked = idx
+                if slot is None or slot is self.TOMBSTONE:
+                    insert_idx = idx
+                    total_probes = i
+                    break
+            if insert_idx is None:
+                self.status = "Arreglo lleno"
+                return
+            self.table[insert_idx] = k
+            self.k_text = ""
+            if total_probes > 0:
+                if first_blocked is None:
+                    first_blocked = base
+                self.status = f"Colisión en {first_blocked+1}; reubicado en {insert_idx+1} con {self._collision_label()}"
+            else:
+                self.status = f"Insertada en índice {insert_idx+1}"
+            self.search = {"result": None, "index": insert_idx}
+
+        elif action == "BUSCAR":
+            if self.N is None or not any(x is not None and x is not self.TOMBSTONE for x in self.table):
+                self.status = "Arreglo vacío"
+                return
+            ok, msg = self._validate_key_text()
+            if not ok:
+                self.status = msg
+                return
+            k = int(self.k_text)
+            idx = self._find_key(k)
+            self.search = {"result": idx, "index": idx}
+            self.status = f"No encontrada" if idx is None else f"Encontrada en índice {idx+1}"
+
+        elif action == "ELIMINAR":
+            if self.N is None:
+                self.status = "Defina R (tamaño del arreglo)"
+                return
+            ok, msg = self._validate_key_text()
+            if not ok:
+                self.status = msg
+                return
+            k = int(self.k_text)
+            idx = self._find_key(k)
+            if idx is None:
+                self.status = "No estaba en el arreglo"
+            else:
+                self.table[idx] = self.TOMBSTONE
+                self.status = "Eliminada"
+            self.search = {"result": None, "index": idx}
+
+        elif action == "SAVE":
+            self.guardar_estado()
+        elif action == "LOAD":
+            self.cargar_estado()
+        elif action == "CLEAN":
+            self.on_select()
+
+    def render(self, surface: pygame.Surface, sim_rect: pygame.Rect):
+        pygame.draw.rect(surface, (255, 248, 227), sim_rect, border_radius=10)
+        pygame.draw.rect(surface, DIVIDER, sim_rect, 1, border_radius=10)
+
+        hash_left = sim_rect.x + 60
+        hash_width = 110
+        controls_x = hash_left + hash_width + 50
+
+        y = sim_rect.y + 18
+        surface.blit(FONT_B.render(self.title, True, ACCENT), (controls_x, y))
+        y += 36
+        pygame.draw.line(surface, DIVIDER, (sim_rect.x+12, y), (sim_rect.right-12, y), 1)
+        y += 12
+
+        # Inputs y labels
+        lbl_N = FONT.render("Tamaño del Arreglo (R):", True, SUBTEXT)
+        lbl_C = FONT.render("Tamaño de clave:", True, SUBTEXT)
+        lbl_K = FONT.render("Clave:", True, SUBTEXT)
+        lbl_mode = FONT.render("Solución de colisiones:", True, SUBTEXT)
+
+        surface.blit(lbl_N, (controls_x, y))
+        surface.blit(lbl_C, (controls_x + 260, y))
+        y += 6
+
+        self._rect_N = draw_input_box(surface, controls_x, y+18, 140, 36,
+                                      self.N_text, FONT, TEXT, ACCENT,
+                                      self.active_field == "N")
+        self._rect_KEYLEN = draw_input_box(surface, controls_x+260, y+18, 140, 36,
+                                           self.keylen_text, FONT, TEXT, ACCENT,
+                                           self.active_field == "KEYLEN")
+
+        surface.blit(lbl_K, (controls_x, y+70))
+        self._rect_K = draw_input_box(surface, controls_x, y+94, 140, 36,
+                                      self.k_text, FONT, TEXT, ACCENT,
+                                      self.active_field == "K")
+
+        # Dropdown colisiones
+        dd_x = controls_x + 260
+        surface.blit(lbl_mode, (dd_x, y+70))
+        dd_main = pygame.Rect(dd_x, y+94, 220, 36)
+        pygame.draw.rect(surface, (245,245,245), dd_main, border_radius=6)
+        pygame.draw.rect(surface, DIVIDER, dd_main, 1, border_radius=6)
+        sel_label = next(t for t,v in self.collision_modes if v == self.collision_mode)
+        surface.blit(FONT_S.render(sel_label, True, TEXT), (dd_main.x+8, dd_main.y+8))
+        pygame.draw.polygon(surface, TEXT, [
+            (dd_main.right-16, dd_main.y+14),
+            (dd_main.right-6,  dd_main.y+14),
+            (dd_main.right-11, dd_main.y+22)
+        ])
+        self._rect_dd_main = dd_main
+
+        # Botonera
+        buttons_y = y + 150
+        pad = 10
+        bx = controls_x
+        bw, bh = 120, 34
+        labels = [
+            ("Insertar", "INSERTAR"), ("Buscar", "BUSCAR"),
+            ("Eliminar", "ELIMINAR"), ("Guardar", "SAVE"),
+            ("Recuperar", "LOAD"), ("Limpiar", "CLEAN")
+        ]
+
+        self._button_rects = []
+        for text, action in labels:
+            rect = pygame.Rect(bx, buttons_y, bw, bh)
+            pygame.draw.rect(surface, (245,245,245), rect, border_radius=6)
+            pygame.draw.rect(surface, DIVIDER, rect, 1, border_radius=6)
+            txt = FONT_S.render(text, True, TEXT)
+            surface.blit(txt, (rect.x + (bw - txt.get_width())//2,
+                              rect.y + (bh - txt.get_height())//2))
+            self._button_rects.append((rect, action))
+            bx += bw + pad
+            if bx + bw > sim_rect.right - 24:
+                bx = controls_x
+                buttons_y += bh + pad
+
+        if self.status:
+            surface.blit(FONT.render(self.status, True, SUBTEXT),
+                        (controls_x, buttons_y + bh + 10))
+
+        # Contenedor de hash con scrollbar
+        N = self.N if self.N is not None else len(self.table)
+        if N > 0:
+            top_y = sim_rect.y + 120
+            max_h = 600
+            max_slots = 20
+            visible_slots = min(N, max_slots)
+            slot_h = max_h / visible_slots
+            total_height = slot_h * N
+
+            pygame.draw.rect(surface, ACCENT,
+                           (hash_left, top_y, hash_width, max_h),
+                           2, border_radius=6)
+
+            if self.scrollbar is None:
+                self.scrollbar = VerticalScrollbar(
+                    hash_left+hash_width+6, top_y, max_h, total_height)
+            else:
+                self.scrollbar.rect.y = top_y
+                self.scrollbar.view_height = max_h
+                self.scrollbar.update_content_height(total_height)
+            
+            scroll_y = self.scrollbar.get_scroll()
+
+            clip = pygame.Rect(hash_left, top_y, hash_width, max_h)
+            surface.set_clip(clip)
+
+            # Líneas y slots
+            for i in range(N+1):
+                y_line = top_y + i*slot_h - scroll_y
+                pygame.draw.line(surface, ACCENT,
+                               (hash_left, y_line),
+                               (hash_left+hash_width, y_line), 1)
+            
+            for idx in range(N):
+                y0 = top_y + idx*slot_h - scroll_y
+                if y0+slot_h < top_y or y0 > top_y+max_h:
+                    continue
+                r = pygame.Rect(hash_left, y0, hash_width, slot_h)
+                val = self.table[idx] if idx < len(self.table) else None
+                if val is self.TOMBSTONE:
+                    dash = FONT_S.render("-", True, (160,160,160))
+                    surface.blit(dash, dash.get_rect(center=r.center))
+                elif val is not None:
+                    fill,border = None,ACCENT
+                    if self.search["result"]==idx:
+                        fill,border=(100,240,160),(0,160,90)
+                    if fill:
+                        pygame.draw.rect(surface, fill, r)
+                    pygame.draw.rect(surface, border, r, 2)
+                    txt = FONT.render(str(val).zfill(self.key_len or 1), True, TEXT)
+                    surface.blit(txt, txt.get_rect(center=r.center))
+
+            surface.set_clip(None)
+
+            # Índices
+            occupied = {i for i,v in enumerate(self.table)
+                       if v not in (None, self.TOMBSTONE)}
+            visibles = occupied | {0, N-1} | set(range(0, N, 10))
+            for idx in sorted(visibles):
+                y0 = top_y + idx*slot_h - scroll_y
+                mid = y0 + slot_h/2
+                if top_y <= mid <= top_y+max_h:
+                    lbl = FONT_S.render(str(idx+1), True, TEXT)
+                    surface.blit(lbl, lbl.get_rect(midright=(hash_left-8, mid)))
+
+            self.scrollbar.draw(surface)
+
+        # Dropdown items
+        self._rect_dd_items = []
+        if self.dropdown_open:
+            opt_y = dd_main.bottom + 2
+            for t,v in self.collision_modes:
+                r = pygame.Rect(dd_x, opt_y, 220, 28)
+                pygame.draw.rect(surface, (255,255,255), r)
+                pygame.draw.rect(surface, DIVIDER, r, 1)
+                surface.blit(FONT_S.render(t, True, TEXT), (r.x+8, r.y+6))
+                self._rect_dd_items.append((r, v))
+                opt_y += 28
+
+
+# ----- 1.1.D.3 Función Hash Truncamiento -----------------------------
+
+
+class HashTruncSim(Simulation):
+    """Simulación de función hash truncamiento"""
+    
+    def __init__(self):
+        super().__init__("1.1.D.3", "Función Hash Truncamiento")
+        self.N_text = ""
+        self.keylen_text = ""
+        self.k_text = ""
+        self.N = None
+        self.key_len = None
+        self.table = []
+        self.TOMBSTONE = object()
+
+        self.status = ""
+        self.active_field = None
+        self._rect_N = self._rect_KEYLEN = self._rect_K = None
+        self._button_rects = []
+
+        self.collision_modes = [
+            ("Prueba lineal", "LINEAR"),
+            ("Prueba cuadrática", "QUADRATIC"),
+            ("Doble función Hash", "DOUBLE")
+        ]
+        self.collision_mode = "LINEAR"
+        self.dropdown_open = False
+        self._rect_dd_main = None
+        self._rect_dd_items = []
+
+        self.search = {
+            "result": None, "index": None
+        }
+
+        self.scrollbar = None
+
+    def on_select(self):
+        self.N_text = self.keylen_text = self.k_text = ""
+        self.N = self.key_len = None
+        self.table = []
+        self.status = ""
+        self.active_field = None
+        self._rect_N = self._rect_KEYLEN = self._rect_K = None
+        self._button_rects = []
+        self.dropdown_open = False
+        self._rect_dd_main = None
+        self._rect_dd_items = []
+        self.collision_mode = "LINEAR"
+        self.search = {"result": None, "index": None}
+        self.scrollbar = None
+
+    def h1(self, k: int) -> int:
+        """Hash base truncamiento"""
+        # r = número de dígitos que caben en N-1 (base 10)
+        r = max(1, len(str(self.N - 1))) if self.N else 1
+        s = str(k)
+        
+        # Si la clave tiene menos dígitos que r, usar todos
+        if len(s) <= r:
+            return k % self.N
+        
+        # Truncar los primeros r dígitos de la izquierda
+        truncated = int(s[:r])
+        return truncated % self.N
+
+    def h2(self, k: int) -> int:
+        return 1 + (k % (self.N - 1 if self.N and self.N > 1 else 1))
+
+    def probe_index(self, base: int, k: int, i: int) -> int:
+        if self.collision_mode == "LINEAR":
+            return (base + i) % self.N
+        elif self.collision_mode == "QUADRATIC":
+            return (base + i * i) % self.N
+        else:  # DOUBLE
+            return (base + i * self.h2(k)) % self.N
+
+    def _collision_label(self) -> str:
+        return {
+            "LINEAR": "Prueba lineal",
+            "QUADRATIC": "Prueba cuadrática",
+            "DOUBLE": "Doble función Hash",
+        }[self.collision_mode]
+
+    def handle_event(self, event, viewport_rect, window_offset):
+        # Primero, manejar eventos del scrollbar
+        if self.scrollbar and self.scrollbar.handle_event(event):
+            return
+
+        # Scroll con botones 4/5
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button in (4, 5):
+            if self.scrollbar:
+                delta = -1 if event.button == 4 else 1
+                fake = pygame.event.Event(pygame.MOUSEWHEEL, {"y": delta})
+                self.scrollbar.handle_event(fake)
+                return
+
+        # Scroll con flechas
+        if event.type == pygame.KEYDOWN and event.key in (pygame.K_UP, pygame.K_DOWN):
+            if self.scrollbar:
+                delta = 1 if event.key == pygame.K_UP else -1
+                fake = pygame.event.Event(pygame.MOUSEWHEEL, {"y": delta})
+                self.scrollbar.handle_event(fake)
+                return
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            offx, offy = window_offset
+            local_x = mx - offx
+            local_y = my - offy
+
+            if self._rect_dd_main and self._rect_dd_main.collidepoint(local_x, local_y):
+                self.dropdown_open = not self.dropdown_open
+                return
+            if self.dropdown_open:
+                for rect, value in self._rect_dd_items:
+                    if rect.collidepoint(local_x, local_y):
+                        self.collision_mode = value
+                        self.dropdown_open = False
+                        return
+                self.dropdown_open = False
+
+            self.active_field = None
+            if self._rect_N and self._rect_N.collidepoint(local_x, local_y):
+                self.active_field = "N"
+            elif self._rect_KEYLEN and self._rect_KEYLEN.collidepoint(local_x, local_y):
+                self.active_field = "KEYLEN"
+            elif self._rect_K and self._rect_K.collidepoint(local_x, local_y):
+                self.active_field = "K"
+
+            for rect, action in self._button_rects:
+                if rect.collidepoint(local_x, local_y):
+                    self._on_button(action)
+                    break
+
+        elif event.type == pygame.KEYDOWN:
+            if self.active_field is None:
+                return
+            if event.key == pygame.K_BACKSPACE:
+                if self.active_field == "N":
+                    self.N_text = self.N_text[:-1]
+                elif self.active_field == "KEYLEN":
+                    self.keylen_text = self.keylen_text[:-1]
+                elif self.active_field == "K":
+                    self.k_text = self.k_text[:-1]
+                return
+            if event.key == pygame.K_RETURN:
+                self._commit_active_field()
+                return
+            if event.unicode.isdigit():
+                if self.active_field == "N":
+                    self.N_text += event.unicode
+                elif self.active_field == "KEYLEN":
+                    self.keylen_text += event.unicode
+                elif self.active_field == "K":
+                    self.k_text += event.unicode
+
+    def _commit_active_field(self):
+        if self.active_field == "N" and self.N_text.isdigit() and int(self.N_text) > 0:
+            self.N = int(self.N_text)
+            self.table = [None] * self.N
+            self.status = f"Tamaño del arreglo fijado en {self.N}"
+            self.search = {"result": None, "index": None}
+            self.scrollbar = None
+        elif self.active_field == "KEYLEN" and self.keylen_text.isdigit() and int(self.keylen_text) > 0:
+            self.key_len = int(self.keylen_text)
+            self.status = f"Tamaño de clave: {self.key_len}"
+        elif self.active_field == "K" and self.k_text.isdigit():
+            self.status = f"Clave lista: {self.k_text}"
+
+    def _validate_key_text(self):
+        if not self.k_text.isdigit():
+            return False, "Ingrese clave numérica"
+        if self.key_len is None:
+            return False, "Defina Tamaño de clave"
+        if len(self.k_text) > self.key_len:
+            return False, f"La clave tiene MÁS de {self.key_len} dígitos"
+        if len(self.k_text) < self.key_len:
+            return False, f"La clave tiene MENOS de {self.key_len} dígitos"
+        return True, None
+
+    def _find_key(self, k):
+        if self.N is None:
+            return None
+        base = self.h1(k)
+        for i in range(self.N):
+            idx = self.probe_index(base, k, i)
+            slot = self.table[idx]
+            if slot is None:
+                return None
+            if slot is not self.TOMBSTONE and slot == k:
+                return idx
+        return None
+
+    def guardar_estado(self, filepath=None):
+        data = {
+            "N": self.N, "key_len": self.key_len, "N_text": self.N_text,
+            "keylen_text": self.keylen_text, "k_text": self.k_text,
+            "table": self.table.copy(), "collision_mode": self.collision_mode,
+            "status": self.status
+        }
+        if filepath is None:
+            root = tk.Tk()
+            root.withdraw()
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".bin",
+                filetypes=[("Archivo binario", "*.bin")]
+            )
+            if not filepath:
+                self.status = "Guardado cancelado"
+                return False
+        try:
+            with open(filepath, "wb") as f:
+                pickle.dump(data, f)
+            self.status = "Tabla hash truncamiento guardada y simulador reiniciado."
+            self.on_select()
+            return True
+        except Exception as e:
+            self.status = f"Error al guardar: {e}"
+            return False
+
+    def cargar_estado(self, filepath=None):
+        if filepath is None:
+            root = tk.Tk()
+            root.withdraw()
+            filepath = filedialog.askopenfilename(
+                filetypes=[("Archivo binario", "*.bin")]
+            )
+            if not filepath:
+                self.status = "Carga cancelada"
+                return False
+        try:
+            with open(filepath, "rb") as f:
+                data = pickle.load(f)
+            self.N = data.get("N", None)
+            self.key_len = data.get("key_len", None)
+            self.N_text = data.get("N_text", "")
+            self.keylen_text = data.get("keylen_text", "")
+            self.k_text = data.get("k_text", "")
+            self.table = data.get("table", []).copy()
+            self.collision_mode = data.get("collision_mode", "LINEAR")
+            self.status = "Tabla hash truncamiento cargada correctamente"
+            return True
+        except Exception as e:
+            self.status = f"Error al cargar: {e}"
+            return False
+
+    def _on_button(self, action):
+        if action == "INSERTAR":
+            if self.N is None:
+                self.status = "Defina R (tamaño del arreglo)"
+                return
+            ok, msg = self._validate_key_text()
+            if not ok:
+                self.status = msg
+                return
+            k = int(self.k_text)
+            if self._find_key(k) is not None:
+                self.status = "La clave ya existe en el arreglo"
+                return
+            base = self.h1(k)
+            insert_idx = None
+            first_blocked = None
+            total_probes = 0
+            for i in range(self.N):
+                idx = self.probe_index(base, k, i)
+                slot = self.table[idx]
+                if i == 0 and slot is not None and slot is not self.TOMBSTONE:
+                    first_blocked = idx
+                if slot is None or slot is self.TOMBSTONE:
+                    insert_idx = idx
+                    total_probes = i
+                    break
+            if insert_idx is None:
+                self.status = "Arreglo lleno"
+                return
+            self.table[insert_idx] = k
+            self.k_text = ""
+            if total_probes > 0:
+                if first_blocked is None:
+                    first_blocked = base
+                self.status = f"Colisión en {first_blocked+1}; reubicado en {insert_idx+1} con {self._collision_label()}"
+            else:
+                self.status = f"Insertada en índice {insert_idx+1}"
+            self.search = {"result": None, "index": insert_idx}
+
+        elif action == "BUSCAR":
+            if self.N is None or not any(x is not None and x is not self.TOMBSTONE for x in self.table):
+                self.status = "Arreglo vacío"
+                return
+            ok, msg = self._validate_key_text()
+            if not ok:
+                self.status = msg
+                return
+            k = int(self.k_text)
+            idx = self._find_key(k)
+            self.search = {"result": idx, "index": idx}
+            self.status = f"No encontrada" if idx is None else f"Encontrada en índice {idx+1}"
+
+        elif action == "ELIMINAR":
+            if self.N is None:
+                self.status = "Defina R (tamaño del arreglo)"
+                return
+            ok, msg = self._validate_key_text()
+            if not ok:
+                self.status = msg
+                return
+            k = int(self.k_text)
+            idx = self._find_key(k)
+            if idx is None:
+                self.status = "No estaba en el arreglo"
+            else:
+                self.table[idx] = self.TOMBSTONE
+                self.status = "Eliminada"
+            self.search = {"result": None, "index": idx}
+
+        elif action == "SAVE":
+            self.guardar_estado()
+        elif action == "LOAD":
+            self.cargar_estado()
+        elif action == "CLEAN":
+            self.on_select()
+
+    def render(self, surface: pygame.Surface, sim_rect: pygame.Rect):
+        pygame.draw.rect(surface, (255, 248, 227), sim_rect, border_radius=10)
+        pygame.draw.rect(surface, DIVIDER, sim_rect, 1, border_radius=10)
+
+        hash_left = sim_rect.x + 60
+        hash_width = 110
+        controls_x = hash_left + hash_width + 50
+
+        y = sim_rect.y + 18
+        surface.blit(FONT_B.render(self.title, True, ACCENT), (controls_x, y))
+        y += 36
+        pygame.draw.line(surface, DIVIDER, (sim_rect.x+12, y), (sim_rect.right-12, y), 1)
+        y += 12
+
+        # Inputs y labels
+        lbl_N = FONT.render("Tamaño del Arreglo (R):", True, SUBTEXT)
+        lbl_C = FONT.render("Tamaño de clave:", True, SUBTEXT)
+        lbl_K = FONT.render("Clave:", True, SUBTEXT)
+        lbl_mode = FONT.render("Solución de colisiones:", True, SUBTEXT)
+
+        surface.blit(lbl_N, (controls_x, y))
+        surface.blit(lbl_C, (controls_x + 260, y))
+        y += 6
+
+        self._rect_N = draw_input_box(surface, controls_x, y+18, 140, 36,
+                                      self.N_text, FONT, TEXT, ACCENT,
+                                      self.active_field == "N")
+        self._rect_KEYLEN = draw_input_box(surface, controls_x+260, y+18, 140, 36,
+                                           self.keylen_text, FONT, TEXT, ACCENT,
+                                           self.active_field == "KEYLEN")
+
+        surface.blit(lbl_K, (controls_x, y+70))
+        self._rect_K = draw_input_box(surface, controls_x, y+94, 140, 36,
+                                      self.k_text, FONT, TEXT, ACCENT,
+                                      self.active_field == "K")
+
+        # Dropdown colisiones
+        dd_x = controls_x + 260
+        surface.blit(lbl_mode, (dd_x, y+70))
+        dd_main = pygame.Rect(dd_x, y+94, 220, 36)
+        pygame.draw.rect(surface, (245,245,245), dd_main, border_radius=6)
+        pygame.draw.rect(surface, DIVIDER, dd_main, 1, border_radius=6)
+        sel_label = next(t for t,v in self.collision_modes if v == self.collision_mode)
+        surface.blit(FONT_S.render(sel_label, True, TEXT), (dd_main.x+8, dd_main.y+8))
+        pygame.draw.polygon(surface, TEXT, [
+            (dd_main.right-16, dd_main.y+14),
+            (dd_main.right-6,  dd_main.y+14),
+            (dd_main.right-11, dd_main.y+22)
+        ])
+        self._rect_dd_main = dd_main
+
+        # Botonera
+        buttons_y = y + 150
+        pad = 10
+        bx = controls_x
+        bw, bh = 120, 34
+        labels = [
+            ("Insertar", "INSERTAR"), ("Buscar", "BUSCAR"),
+            ("Eliminar", "ELIMINAR"), ("Guardar", "SAVE"),
+            ("Recuperar", "LOAD"), ("Limpiar", "CLEAN")
+        ]
+
+        self._button_rects = []
+        for text, action in labels:
+            rect = pygame.Rect(bx, buttons_y, bw, bh)
+            pygame.draw.rect(surface, (245,245,245), rect, border_radius=6)
+            pygame.draw.rect(surface, DIVIDER, rect, 1, border_radius=6)
+            txt = FONT_S.render(text, True, TEXT)
+            surface.blit(txt, (rect.x + (bw - txt.get_width())//2,
+                              rect.y + (bh - txt.get_height())//2))
+            self._button_rects.append((rect, action))
+            bx += bw + pad
+            if bx + bw > sim_rect.right - 24:
+                bx = controls_x
+                buttons_y += bh + pad
+
+        if self.status:
+            surface.blit(FONT.render(self.status, True, SUBTEXT),
+                        (controls_x, buttons_y + bh + 10))
+
+        # Contenedor de hash con scrollbar
+        N = self.N if self.N is not None else len(self.table)
+        if N > 0:
+            top_y = sim_rect.y + 120
+            max_h = 600
+            max_slots = 20
+            visible_slots = min(N, max_slots)
+            slot_h = max_h / visible_slots
+            total_height = slot_h * N
+
+            pygame.draw.rect(surface, ACCENT,
+                           (hash_left, top_y, hash_width, max_h),
+                           2, border_radius=6)
+
+            if self.scrollbar is None:
+                self.scrollbar = VerticalScrollbar(
+                    hash_left+hash_width+6, top_y, max_h, total_height)
+            else:
+                self.scrollbar.rect.y = top_y
+                self.scrollbar.view_height = max_h
+                self.scrollbar.update_content_height(total_height)
+            
+            scroll_y = self.scrollbar.get_scroll()
+
+            clip = pygame.Rect(hash_left, top_y, hash_width, max_h)
+            surface.set_clip(clip)
+
+            # Líneas y slots
+            for i in range(N+1):
+                y_line = top_y + i*slot_h - scroll_y
+                pygame.draw.line(surface, ACCENT,
+                               (hash_left, y_line),
+                               (hash_left+hash_width, y_line), 1)
+            
+            for idx in range(N):
+                y0 = top_y + idx*slot_h - scroll_y
+                if y0+slot_h < top_y or y0 > top_y+max_h:
+                    continue
+                r = pygame.Rect(hash_left, y0, hash_width, slot_h)
+                val = self.table[idx] if idx < len(self.table) else None
+                if val is self.TOMBSTONE:
+                    dash = FONT_S.render("-", True, (160,160,160))
+                    surface.blit(dash, dash.get_rect(center=r.center))
+                elif val is not None:
+                    fill,border = None,ACCENT
+                    if self.search["result"]==idx:
+                        fill,border=(100,240,160),(0,160,90)
+                    if fill:
+                        pygame.draw.rect(surface, fill, r)
+                    pygame.draw.rect(surface, border, r, 2)
+                    txt = FONT.render(str(val).zfill(self.key_len or 1), True, TEXT)
+                    surface.blit(txt, txt.get_rect(center=r.center))
+
+            surface.set_clip(None)
+
+            # Índices
+            occupied = {i for i,v in enumerate(self.table)
+                       if v not in (None, self.TOMBSTONE)}
+            visibles = occupied | {0, N-1} | set(range(0, N, 10))
+            for idx in sorted(visibles):
+                y0 = top_y + idx*slot_h - scroll_y
+                mid = y0 + slot_h/2
+                if top_y <= mid <= top_y+max_h:
+                    lbl = FONT_S.render(str(idx+1), True, TEXT)
+                    surface.blit(lbl, lbl.get_rect(midright=(hash_left-8, mid)))
+
+            self.scrollbar.draw(surface)
+
+        # Dropdown items
+        self._rect_dd_items = []
+        if self.dropdown_open:
+            opt_y = dd_main.bottom + 2
+            for t,v in self.collision_modes:
+                r = pygame.Rect(dd_x, opt_y, 220, 28)
+                pygame.draw.rect(surface, (255,255,255), r)
+                pygame.draw.rect(surface, DIVIDER, r, 1)
+                surface.blit(FONT_S.render(t, True, TEXT), (r.x+8, r.y+6))
+                self._rect_dd_items.append((r, v))
+                opt_y += 28
+
+# ----- 1.1.D.4 Función Hash Plegamiento (Folding) --------------------
+
+class HashFoldSim(Simulation):
+    """Simulación de función hash plegamiento"""
+    
+    def __init__(self):
+        super().__init__("1.1.D.4", "Función Hash Plegamiento")
+        self.N_text = ""
+        self.keylen_text = ""
+        self.k_text = ""
+        self.N = None
+        self.key_len = None
+        self.table = []
+        self.TOMBSTONE = object()
+
+        self.status = ""
+        self.active_field = None
+        self._rect_N = self._rect_KEYLEN = self._rect_K = None
+        self._button_rects = []
+
+        self.collision_modes = [
+            ("Prueba lineal", "LINEAR"),
+            ("Prueba cuadrática", "QUADRATIC"),
+            ("Doble función Hash", "DOUBLE")
+        ]
+        self.collision_mode = "LINEAR"
+        self.dropdown_open = False
+        self._rect_dd_main = None
+        self._rect_dd_items = []
+
+        self.search = {
+            "result": None, "index": None
+        }
+
+        self.scrollbar = None
+
+    def on_select(self):
+        self.N_text = self.keylen_text = self.k_text = ""
+        self.N = self.key_len = None
+        self.table = []
+        self.status = ""
+        self.active_field = None
+        self._rect_N = self._rect_KEYLEN = self._rect_K = None
+        self._button_rects = []
+        self.dropdown_open = False
+        self._rect_dd_main = None
+        self._rect_dd_items = []
+        self.collision_mode = "LINEAR"
+        self.search = {"result": None, "index": None}
+        self.scrollbar = None
+
+    def h1(self, k: int) -> int:
+        """Hash base plegamiento"""
+        # r = número de dígitos que caben en N-1 (base 10)
+        r = max(1, len(str(self.N - 1))) if self.N else 1
+        s = str(k)
+        
+        # Partir en grupos de r dígitos desde la izquierda
+        groups = []
+        for i in range(0, len(s), r):
+            groups.append(int(s[i:i+r]))
+        
+        # Suma simple y mod N (plegamiento simple)
+        base_sum = sum(groups)
+        return base_sum % self.N
+
+    def h2(self, k: int) -> int:
+        return 1 + (k % (self.N - 1 if self.N and self.N > 1 else 1))
+
+    def probe_index(self, base: int, k: int, i: int) -> int:
+        if self.collision_mode == "LINEAR":
+            return (base + i) % self.N
+        elif self.collision_mode == "QUADRATIC":
+            return (base + i * i) % self.N
+        else:  # DOUBLE
+            return (base + i * self.h2(k)) % self.N
+
+    def _collision_label(self) -> str:
+        return {
+            "LINEAR": "Prueba lineal",
+            "QUADRATIC": "Prueba cuadrática",
+            "DOUBLE": "Doble función Hash"
+        }[self.collision_mode]
+
+    def handle_event(self, event, viewport_rect, window_offset):
+        # Primero, manejar eventos del scrollbar
+        if self.scrollbar and self.scrollbar.handle_event(event):
+            return
+
+        # Scroll con botones 4/5
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button in (4, 5):
+            if self.scrollbar:
+                delta = -1 if event.button == 4 else 1
+                fake = pygame.event.Event(pygame.MOUSEWHEEL, {"y": delta})
+                self.scrollbar.handle_event(fake)
+                return
+
+        # Scroll con flechas
+        if event.type == pygame.KEYDOWN and event.key in (pygame.K_UP, pygame.K_DOWN):
+            if self.scrollbar:
+                delta = 1 if event.key == pygame.K_UP else -1
+                fake = pygame.event.Event(pygame.MOUSEWHEEL, {"y": delta})
+                self.scrollbar.handle_event(fake)
+                return
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mx, my = event.pos
+            offx, offy = window_offset
+            local_x = mx - offx
+            local_y = my - offy
+
+            if self._rect_dd_main and self._rect_dd_main.collidepoint(local_x, local_y):
+                self.dropdown_open = not self.dropdown_open
+                return
+            if self.dropdown_open:
+                for rect, value in self._rect_dd_items:
+                    if rect.collidepoint(local_x, local_y):
+                        self.collision_mode = value
+                        self.dropdown_open = False
+                        return
+                self.dropdown_open = False
+
+            self.active_field = None
+            if self._rect_N and self._rect_N.collidepoint(local_x, local_y):
+                self.active_field = "N"
+            elif self._rect_KEYLEN and self._rect_KEYLEN.collidepoint(local_x, local_y):
+                self.active_field = "KEYLEN"
+            elif self._rect_K and self._rect_K.collidepoint(local_x, local_y):
+                self.active_field = "K"
+
+            for rect, action in self._button_rects:
+                if rect.collidepoint(local_x, local_y):
+                    self._on_button(action)
+                    break
+
+        elif event.type == pygame.KEYDOWN:
+            if self.active_field is None:
+                return
+            if event.key == pygame.K_BACKSPACE:
+                if self.active_field == "N":
+                    self.N_text = self.N_text[:-1]
+                elif self.active_field == "KEYLEN":
+                    self.keylen_text = self.keylen_text[:-1]
+                elif self.active_field == "K":
+                    self.k_text = self.k_text[:-1]
+                return
+            if event.key == pygame.K_RETURN:
+                self._commit_active_field()
+                return
+            if event.unicode.isdigit():
+                if self.active_field == "N":
+                    self.N_text += event.unicode
+                elif self.active_field == "KEYLEN":
+                    self.keylen_text += event.unicode
+                elif self.active_field == "K":
+                    self.k_text += event.unicode
+
+    def _commit_active_field(self):
+        if self.active_field == "N" and self.N_text.isdigit() and int(self.N_text) > 0:
+            self.N = int(self.N_text)
+            self.table = [None] * self.N
+            self.status = f"Tamaño del arreglo fijado en {self.N}"
+            self.search = {"result": None, "index": None}
+            self.scrollbar = None
+        elif self.active_field == "KEYLEN" and self.keylen_text.isdigit() and int(self.keylen_text) > 0:
+            self.key_len = int(self.keylen_text)
+            self.status = f"Tamaño de clave: {self.key_len}"
+        elif self.active_field == "K" and self.k_text.isdigit():
+            self.status = f"Clave lista: {self.k_text}"
+
+    def _validate_key_text(self) -> tuple[bool, str]:
+        if not self.k_text.isdigit():
+            return False, "Ingrese clave numérica"
+        if self.key_len is None:
+            return False, "Defina Tamaño de clave"
+        if len(self.k_text) > self.key_len:
+            return False, f"La clave tiene MÁS de {self.key_len} dígitos"
+        if len(self.k_text) < self.key_len:
+            return False, f"La clave tiene MENOS de {self.key_len} dígitos"
+        return True, ""
+
+    def _find_key(self, k):
+        if self.N is None:
+            return None
+        base = self.h1(k)
+        for i in range(self.N):
+            idx = self.probe_index(base, k, i)
+            slot = self.table[idx]
+            if slot is None:
+                return None
+            if slot is not self.TOMBSTONE and slot == k:
+                return idx
+        return None
+
+    def guardar_estado(self, filepath=None):
+        data = {
+            "N": self.N, "key_len": self.key_len, "N_text": self.N_text,
+            "keylen_text": self.keylen_text, "k_text": self.k_text,
+            "table": self.table.copy(), "collision_mode": self.collision_mode,
+            "status": self.status
+        }
+        if filepath is None:
+            root = tk.Tk()
+            root.withdraw()
+            filepath = filedialog.asksaveasfilename(
+                defaultextension=".bin",
+                filetypes=[("Archivo binario", "*.bin")]
+            )
+            if not filepath:
+                self.status = "Guardado cancelado"
+                return False
+        try:
+            with open(filepath, "wb") as f:
+                pickle.dump(data, f)
+            self.status = "Tabla hash plegamiento guardada y simulador reiniciado."
+            self.on_select()
+            return True
+        except Exception as e:
+            self.status = f"Error al guardar: {e}"
+            return False
+
+    def cargar_estado(self, filepath=None):
+        if filepath is None:
+            root = tk.Tk()
+            root.withdraw()
+            filepath = filedialog.askopenfilename(
+                filetypes=[("Archivo binario", "*.bin")]
+            )
+            if not filepath:
+                self.status = "Carga cancelada"
+                return False
+        try:
+            with open(filepath, "rb") as f:
+                data = pickle.load(f)
+            self.N = data.get("N", None)
+            self.key_len = data.get("key_len", None)
+            self.N_text = data.get("N_text", "")
+            self.keylen_text = data.get("keylen_text", "")
+            self.k_text = data.get("k_text", "")
+            self.table = data.get("table", []).copy()
+            self.collision_mode = data.get("collision_mode", "LINEAR")
+            self.status = "Tabla hash plegamiento cargada correctamente"
+            return True
+        except Exception as e:
+            self.status = f"Error al cargar: {e}"
+            return False
+
+    def _on_button(self, action):
+        if action == "INSERTAR":
+            if self.N is None:
+                self.status = "Defina R (tamaño del arreglo)"
+                return
+            ok, msg = self._validate_key_text()
+            if not ok:
+                self.status = msg
+                return
+            k = int(self.k_text)
+            if self._find_key(k) is not None:
+                self.status = "La clave ya existe en el arreglo"
+                return
+            base = self.h1(k)
+            insert_idx = None
+            first_blocked = None
+            total_probes = 0
+            for i in range(self.N):
+                idx = self.probe_index(base, k, i)
+                slot = self.table[idx]
+                if i == 0 and slot is not None and slot is not self.TOMBSTONE:
+                    first_blocked = idx
+                if slot is None or slot is self.TOMBSTONE:
+                    insert_idx = idx
+                    total_probes = i
+                    break
+            if insert_idx is None:
+                self.status = "Arreglo lleno"
+                return
+            self.table[insert_idx] = k
+            self.k_text = ""
+            if total_probes > 0:
+                if first_blocked is None:
+                    first_blocked = base
+                self.status = f"Colisión en {first_blocked+1}; reubicado en {insert_idx+1} con {self._collision_label()}"
+            else:
+                self.status = f"Insertada en índice {insert_idx+1}"
+            self.search = {"result": None, "index": insert_idx}
+
+        elif action == "BUSCAR":
+            if self.N is None or not any(x is not None and x is not self.TOMBSTONE for x in self.table):
+                self.status = "Arreglo vacío"
+                return
+            ok, msg = self._validate_key_text()
+            if not ok:
+                self.status = msg
+                return
+            k = int(self.k_text)
+            idx = self._find_key(k)
+            self.search = {"result": idx, "index": idx}
+            self.status = f"No encontrada" if idx is None else f"Encontrada en índice {idx+1}"
+
+        elif action == "ELIMINAR":
+            if self.N is None:
+                self.status = "Defina R (tamaño del arreglo)"
+                return
+            ok, msg = self._validate_key_text()
+            if not ok:
+                self.status = msg
+                return
+            k = int(self.k_text)
+            idx = self._find_key(k)
+            if idx is None:
+                self.status = "No estaba en el arreglo"
+            else:
+                self.table[idx] = self.TOMBSTONE
+                self.status = "Eliminada"
+            self.search = {"result": None, "index": idx}
+
+        elif action == "SAVE":
+            self.guardar_estado()
+        elif action == "LOAD":
+            self.cargar_estado()
+        elif action == "CLEAN":
+            self.on_select()
+
+    def render(self, surface: pygame.Surface, sim_rect: pygame.Rect):
+        pygame.draw.rect(surface, (255, 248, 227), sim_rect, border_radius=10)
+        pygame.draw.rect(surface, DIVIDER, sim_rect, 1, border_radius=10)
+
+        hash_left = sim_rect.x + 60
+        hash_width = 110
+        controls_x = hash_left + hash_width + 50
+
+        y = sim_rect.y + 18
+        surface.blit(FONT_B.render(self.title, True, ACCENT), (controls_x, y))
+        y += 36
+        pygame.draw.line(surface, DIVIDER, (sim_rect.x+12, y), (sim_rect.right-12, y), 1)
+        y += 12
+
+        # Inputs y labels
+        lbl_N = FONT.render("Tamaño del Arreglo (R):", True, SUBTEXT)
+        lbl_C = FONT.render("Tamaño de clave:", True, SUBTEXT)
+        lbl_K = FONT.render("Clave:", True, SUBTEXT)
+        lbl_mode = FONT.render("Solución de colisiones:", True, SUBTEXT)
+
+        surface.blit(lbl_N, (controls_x, y))
+        surface.blit(lbl_C, (controls_x + 260, y))
+        y += 6
+
+        self._rect_N = draw_input_box(surface, controls_x, y+18, 140, 36,
+                                      self.N_text, FONT, TEXT, ACCENT,
+                                      self.active_field == "N")
+        self._rect_KEYLEN = draw_input_box(surface, controls_x+260, y+18, 140, 36,
+                                           self.keylen_text, FONT, TEXT, ACCENT,
+                                           self.active_field == "KEYLEN")
+
+        surface.blit(lbl_K, (controls_x, y+70))
+        self._rect_K = draw_input_box(surface, controls_x, y+94, 140, 36,
+                                      self.k_text, FONT, TEXT, ACCENT,
+                                      self.active_field == "K")
+
+        # Dropdown colisiones
+        dd_x = controls_x + 260
+        surface.blit(lbl_mode, (dd_x, y+70))
+        dd_main = pygame.Rect(dd_x, y+94, 220, 36)
+        pygame.draw.rect(surface, (245,245,245), dd_main, border_radius=6)
+        pygame.draw.rect(surface, DIVIDER, dd_main, 1, border_radius=6)
+        sel_label = next(t for t,v in self.collision_modes if v == self.collision_mode)
+        surface.blit(FONT_S.render(sel_label, True, TEXT), (dd_main.x+8, dd_main.y+8))
+        pygame.draw.polygon(surface, TEXT, [
+            (dd_main.right-16, dd_main.y+14),
+            (dd_main.right-6,  dd_main.y+14),
+            (dd_main.right-11, dd_main.y+22)
+        ])
+        self._rect_dd_main = dd_main
+
+        # Botonera
+        buttons_y = y + 150
+        pad = 10
+        bx = controls_x
+        bw, bh = 120, 34
+        labels = [
+            ("Insertar", "INSERTAR"), ("Buscar", "BUSCAR"),
+            ("Eliminar", "ELIMINAR"), ("Guardar", "SAVE"),
+            ("Recuperar", "LOAD"), ("Limpiar", "CLEAN")
+        ]
+
+        self._button_rects = []
+        for text, action in labels:
+            rect = pygame.Rect(bx, buttons_y, bw, bh)
+            pygame.draw.rect(surface, (245,245,245), rect, border_radius=6)
+            pygame.draw.rect(surface, DIVIDER, rect, 1, border_radius=6)
+            txt = FONT_S.render(text, True, TEXT)
+            surface.blit(txt, (rect.x + (bw - txt.get_width())//2,
+                              rect.y + (bh - txt.get_height())//2))
+            self._button_rects.append((rect, action))
+            bx += bw + pad
+            if bx + bw > sim_rect.right - 24:
+                bx = controls_x
+                buttons_y += bh + pad
+
+        if self.status:
+            surface.blit(FONT.render(self.status, True, SUBTEXT),
+                        (controls_x, buttons_y + bh + 10))
+
+        # Contenedor de hash con scrollbar
+        N = self.N if self.N is not None else len(self.table)
+        if N > 0:
+            top_y = sim_rect.y + 120
+            max_h = 600
+            max_slots = 20
+            visible_slots = min(N, max_slots)
+            slot_h = max_h / visible_slots
+            total_height = slot_h * N
+
+            pygame.draw.rect(surface, ACCENT,
+                           (hash_left, top_y, hash_width, max_h),
+                           2, border_radius=6)
+
+            if self.scrollbar is None:
+                self.scrollbar = VerticalScrollbar(
+                    hash_left+hash_width+6, top_y, max_h, total_height)
+            else:
+                self.scrollbar.rect.y = top_y
+                self.scrollbar.view_height = max_h
+                self.scrollbar.update_content_height(total_height)
+            
+            scroll_y = self.scrollbar.get_scroll()
+
+            clip = pygame.Rect(hash_left, top_y, hash_width, max_h)
+            surface.set_clip(clip)
+
+            # Líneas y slots
+            for i in range(N+1):
+                y_line = top_y + i*slot_h - scroll_y
+                pygame.draw.line(surface, ACCENT,
+                               (hash_left, y_line),
+                               (hash_left+hash_width, y_line), 1)
+            
+            for idx in range(N):
+                y0 = top_y + idx*slot_h - scroll_y
+                if y0+slot_h < top_y or y0 > top_y+max_h:
+                    continue
+                r = pygame.Rect(hash_left, y0, hash_width, slot_h)
+                val = self.table[idx] if idx < len(self.table) else None
+                if val is self.TOMBSTONE:
+                    dash = FONT_S.render("-", True, (160,160,160))
+                    surface.blit(dash, dash.get_rect(center=r.center))
+                elif val is not None:
+                    fill,border = None,ACCENT
+                    if self.search["result"]==idx:
+                        fill,border=(100,240,160),(0,160,90)
+                    if fill:
+                        pygame.draw.rect(surface, fill, r)
+                    pygame.draw.rect(surface, border, r, 2)
+                    txt = FONT.render(str(val).zfill(self.key_len or 1), True, TEXT)
+                    surface.blit(txt, txt.get_rect(center=r.center))
+
+            surface.set_clip(None)
+
+            # Índices
+            occupied = {i for i,v in enumerate(self.table)
+                       if v not in (None, self.TOMBSTONE)}
+            visibles = occupied | {0, N-1} | set(range(0, N, 10))
+            for idx in sorted(visibles):
+                y0 = top_y + idx*slot_h - scroll_y
+                mid = y0 + slot_h/2
+                if top_y <= mid <= top_y+max_h:
+                    lbl = FONT_S.render(str(idx+1), True, TEXT)
+                    surface.blit(lbl, lbl.get_rect(midright=(hash_left-8, mid)))
+
+            self.scrollbar.draw(surface)
+
+        # Dropdown items
+        self._rect_dd_items = []
+        if self.dropdown_open:
+            opt_y = dd_main.bottom + 2
+            for t,v in self.collision_modes:
+                r = pygame.Rect(dd_x, opt_y, 220, 28)
+                pygame.draw.rect(surface, (255,255,255), r)
+                pygame.draw.rect(surface, DIVIDER, r, 1)
+                surface.blit(FONT_S.render(t, True, TEXT), (r.x+8, r.y+6))
+                self._rect_dd_items.append((r, v))
+                opt_y += 28
+
+
+
+
+# ----- 1.2.A.1 Árboles de búsqueda digital --------------------------
+
+
+
+
+
+# ----- 1.2.A.2 Tries de búsquedas por residuos ----------------------
+
+
+
+
+
+# ----- 1.2.A.3 Árboles por residuos múltiples -----------------------
+
+
+
+
+
+# ----- 1.2.A.4 Árboles de Huffman -----------------------------------
+
+
+
+
+
+# ----- 1.2.B.1 Métodos elementales ----------------------------------
+
+
+
+
+
+# ----- 1.2.B.2 Métodos de la rejilla --------------------------------
+
+
+
+
+
+# ----- 1.2.B.3 Arreglos 2D ------------------------------------------
+
+
+
+
+
+# ----- 1.3.1 Externas Secuencial -----------------------------------
+
+
+
+
+
+# ----- 1.3.2 Externas Binaria ---------------------------------------
+
+
+
+
+
+# ----- 1.3.3.A Función Módulo ---------------------------------------
+
+
+
+
+
+# ----- 1.3.3.B Función Cuadrado -------------------------------------
+
+
+
+
+# ----- 1.3.3.C Función Truncamiento ---------------------------------
+
+
+
+
+
+# ----- 1.3.3.D Función Plegamiento ----------------------------------
+
+
+
+
+
+# ----- 1.3.3.E Transferencia de base - conversión --------------------
+
+
+
+
+# ----- 1.4.1.A Expansiones parciales --------------------------------
+
+
+
+
+# ----- 1.4.1.B Expansiones totales ----------------------------------
+
+
+
+
+
+# ----- 1.4.1.C Reducción Parcial ------------------------------------
+
+
+
+
+# ----- 1.4.1.D Reducción Total --------------------------------------
+
+
+
+
+
+
+# Para todos los anteriores, usamos PlaceholderSim hasta implementar:
+def make_placeholders():
+    return {
+        "1.1.A": PlaceholderSim("1.1.A", "Búsqueda Secuencial"),
+        "1.1.B": PlaceholderSim("1.1.B", "Búsqueda Indizada"),
+        "1.1.D.1": PlaceholderSim("1.1.D.1", "Función Hash Mod"),
+        "1.1.D.2": PlaceholderSim("1.1.D.2", "Función Hash Cuadrado"),
+        "1.1.D.3": PlaceholderSim("1.1.D.3", "Función Hash Truncamiento"),
+        "1.1.D.4": PlaceholderSim("1.1.D.4", "Función Hash Plegamiento"),
+        "1.2.A.1": PlaceholderSim("1.2.A.1", "Árboles de búsqueda digital"),
+        "1.2.A.2": PlaceholderSim("1.2.A.2", "Tries de búsquedas por residuos"),
+        "1.2.A.3": PlaceholderSim("1.2.A.3", "Árboles por residuos múltiples"),
+        "1.2.A.4": PlaceholderSim("1.2.A.4", "Árboles de Huffman"),
+        "1.2.B.1": PlaceholderSim("1.2.B.1", "Métodos elementales"),
+        "1.2.B.2": PlaceholderSim("1.2.B.2", "Métodos de la rejilla"),
+        "1.2.B.3": PlaceholderSim("1.2.B.3", "Arreglos 2D"),
+        "1.3.1": PlaceholderSim("1.3.1", "Búsquedas Externas: Secuencial"),
+        "1.3.2": PlaceholderSim("1.3.2", "Búsquedas Externas: Binaria"),
+        "1.3.3.A": PlaceholderSim("1.3.3.A", "Función Módulo"),
+        "1.3.3.B": PlaceholderSim("1.3.3.B", "Función Cuadrado"),
+        "1.3.3.C": PlaceholderSim("1.3.3.C", "Función Truncamiento"),
+        "1.3.3.D": PlaceholderSim("1.3.3.D", "Función Plegamiento"),
+        "1.3.3.E": PlaceholderSim("1.3.3.E", "Transferencia de base - conversión"),
+        "1.4.1.A": PlaceholderSim("1.4.1.A", "Expansiones parciales"),
+        "1.4.1.B": PlaceholderSim("1.4.1.B", "Expansiones totales"),
+        "1.4.1.C": PlaceholderSim("1.4.1.C", "Reducción Parcial"),
+        "1.4.1.D": PlaceholderSim("1.4.1.D", "Reducción Total"),
+    }
+
+# Registro final de simulaciones
+SIM_REGISTRY = {"1.1.C": BinarySearchSim(),**make_placeholders()}
+SIM_REGISTRY["1.1.A"] = SequentialSearchSim()
+SIM_REGISTRY["1.1.D.1"] = HashModSim()
+SIM_REGISTRY["1.1.D.2"] = HashSquareSim()
+SIM_REGISTRY["1.1.D.3"] = HashTruncSim()
+SIM_REGISTRY["1.1.D.4"] = HashFoldSim()
+
+# ---------------------------------------------------------------------
+# ----- 6. ESTADO GLOBAL UI -------------------------------------------
+# ---------------------------------------------------------------------
+
+selected_id = None
+scroll_y = 0
+clock = pygame.time.Clock()
+hits = []  # evita usar antes de asignar
+current_sim = None
+
+# ---------------------------------------------------------------------
+# ----- 7. LOOP PRINCIPAL ---------------------------------------------
+# ---------------------------------------------------------------------
+
+while True:
+    dt = clock.tick(60) / 1000.0
+    if current_sim:
+        current_sim.update(dt)
+
+    for e in pygame.event.get():
+        if e.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+        elif e.type == pygame.MOUSEWHEEL:
+            scroll_y -= e.y * 40
+            scroll_y = max(0, scroll_y)
+
+        elif e.type == pygame.VIDEORESIZE:
+            recalc_layout(e.w, e.h)
+            screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE | pygame.DOUBLEBUF)
+
+        elif e.type == pygame.MOUSEBUTTONDOWN and e.button == 1:
+            mx, my = e.pos
+
+            if mx < SIDEBAR_W:
+                # Manejo de selección en el sidebar
+                for rect, nid in hits:
+                    if rect.collidepoint((mx, my)):
+                        node = find_by_id(TOPICS, nid)
+                        if node:
+                            if node.get("children"):
+                                node["expanded"] = not node["expanded"]
+                            if not node.get("children"):
+                                # Activar simulación del leaf
+                                selected_id = nid
+                                # on_deselect de sim previa
+                                if current_sim:
+                                    current_sim.on_deselect()
+                                current_sim = SIM_REGISTRY.get(selected_id, None)
+                                if current_sim:
+                                    current_sim.on_select()
+                        break
+            else:
+                # Click en zona de simulación -> delegamos a la sim activa
+                if current_sim:
+                    # right-offset para convertir coords absolutas a coords del right surface
+                    current_sim.handle_event(e, None, (SIDEBAR_W, 0))
+
+        elif e.type == pygame.KEYDOWN:
+            if current_sim:
+                current_sim.handle_event(e, None, (SIDEBAR_W, 0))
+
+    # Dibujo fondo ventana
+    screen.blit(background_img, (0, 0))
+
+    # Sidebar
+    sidebar, hits, content_h = render_sidebar(scroll_y, selected_id)
+    screen.blit(sidebar, (0, 0))
+
+    # Panel derecho
+    right_w = WIDTH - SIDEBAR_W
+    right = pygame.Surface((right_w, HEIGHT))
+
+    node = find_by_id(TOPICS, selected_id) if selected_id else None
+
+    # Header
+    pygame.draw.rect(right, (252, 253, 255), pygame.Rect(0, 0, right_w, HEADER_H))
+    pygame.draw.line(right, DIVIDER, (0, HEADER_H), (right_w, HEADER_H), 1)
+
+    if node is None:
+        right.fill((255, 255, 255))
+        logo_pos = ((right_w - logo_img.get_width()) // 2, HEADER_H + 30)
+        right.blit(logo_img, logo_pos)
+        title_img = FONT_T.render(initial_title, True, TEXT)
+        title_x = (right_w - title_img.get_width()) // 2
+        right.blit(title_img, (title_x, logo_pos[1] + logo_img.get_height() + 20))
+    else:
+        right.blit(background_img, (0, 0))
+        pygame.draw.rect(right, (255, 248, 227), pygame.Rect(0, 0, right_w, HEADER_H))
+        pygame.draw.line(right, DIVIDER, (0, HEADER_H), (right_w, HEADER_H), 1)
+        title_img = FONT_T.render(node["title"], True, TEXT)
+        right.blit(title_img, (20, 16))
+
+        # Área de simulación
+        sim_rect = pygame.Rect(16, HEADER_H + 8, right_w - 32, HEIGHT - HEADER_H - 20)
+        pygame.draw.rect(right, (255, 248, 227), sim_rect, border_radius=10)
+        pygame.draw.rect(right, DIVIDER, sim_rect, 1, border_radius=10)
+
+        if current_sim:
+            current_sim.render(right, sim_rect)
+        else:
+            # fallback
+            label = FONT_B.render("Simulación", True, ACCENT)
+            right.blit(label, (sim_rect.x + 16, sim_rect.y + 12))
+            pygame.draw.line(right, DIVIDER, (sim_rect.x + 12, sim_rect.y + 48), (sim_rect.right - 12, sim_rect.y + 48), 1)
+            help_txt = "Seleccione una temática hoja para ver su simulación"
+            right.blit(FONT.render(help_txt, True, SUBTEXT), (sim_rect.x + 16, sim_rect.y + 56))
+
+    screen.blit(right, (SIDEBAR_W, 0))
+    pygame.display.flip()
