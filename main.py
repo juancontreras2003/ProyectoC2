@@ -6,6 +6,7 @@ from assets import background_img, logo_img, initial_title, rescale_background
 from topics import TOPICS
 from layout import render_sidebar, recalc_layout, find_by_id
 from widgets import VerticalScrollbar
+from simulations import SIM_REGISTRY
 
 pygame.init()
 
@@ -21,6 +22,7 @@ def main():
     selected_id = None
     scroll_y = 0
     sidebar_visible = True
+    current_sim = None
 
     # Sidebar inicial
     sidebar, hitboxes, content_h = render_sidebar(scroll_y, selected_id)
@@ -28,6 +30,8 @@ def main():
 
     while running:
         dt = clock.tick(60) / 1000.0
+        if current_sim:
+            current_sim.update(dt)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -66,15 +70,29 @@ def main():
                             if node and node.get("children"):
                                 node["expanded"] = not node.get("expanded", False)
                             else:
+                                # Cambio de simulación
+                                if current_sim:
+                                    current_sim.on_deselect()
                                 selected_id = nid
+                                current_sim = SIM_REGISTRY.get(selected_id, None)
+                                if current_sim:
+                                    current_sim.on_select()
                             sidebar, hitboxes, content_h = render_sidebar(scroll_y, selected_id)
                             scrollbar = VerticalScrollbar(max(0, K.SIDEBAR_W - 12), 0, K.HEIGHT, content_h) if sidebar_visible else None
                             break
+                else:
+                    # Click fuera del sidebar -> delegar a simulación activa
+                    if current_sim:
+                        current_sim.handle_event(event, None, (sidebar_width, 0))
 
             elif sidebar_visible and scrollbar and scrollbar.handle_event(event):
                 scroll_y = scrollbar.get_scroll()
                 sidebar, hitboxes, content_h = render_sidebar(scroll_y, selected_id)
                 scrollbar.update_content_height(content_h)
+
+            elif event.type == pygame.KEYDOWN:
+                if current_sim:
+                    current_sim.handle_event(event, None, (sidebar_width if sidebar_visible else 0, 0))
 
         # Dimensiones actuales
         sidebar_width = K.SIDEBAR_W if sidebar_visible else 0
@@ -109,10 +127,21 @@ def main():
             title_img = K.FONT_T.render(node["title"], True, K.TEXT)
             right.blit(title_img, (20, 20))
 
-            # Área de simulación (placeholder)
+            # Área de simulación
             sim_rect = pygame.Rect(16, K.HEADER_H, right_w - 32, K.HEIGHT - K.HEADER_H - 16)
-            pygame.draw.rect(right, (255, 248, 227), sim_rect, border_radius=10)
-            pygame.draw.rect(right, K.DIVIDER, sim_rect, 1, border_radius=10)
+            
+            if current_sim:
+                current_sim.render(right, sim_rect)
+            else:
+                # Placeholder cuando no hay simulación
+                pygame.draw.rect(right, (255, 248, 227), sim_rect, border_radius=10)
+                pygame.draw.rect(right, K.DIVIDER, sim_rect, 1, border_radius=10)
+                label = K.FONT_B.render("Simulación", True, K.ACCENT)
+                right.blit(label, (sim_rect.x + 16, sim_rect.y + 12))
+                pygame.draw.line(right, K.DIVIDER, (sim_rect.x + 12, sim_rect.y + 48), 
+                                (sim_rect.right - 12, sim_rect.y + 48), 1)
+                help_txt = "Seleccione una temática para ver su simulación"
+                right.blit(K.FONT.render(help_txt, True, K.SUBTEXT), (sim_rect.x + 16, sim_rect.y + 56))
 
         # Botón de toggle sidebar (panel derecho)
         toggle_btn = pygame.Rect(0, 0, 30, 30)

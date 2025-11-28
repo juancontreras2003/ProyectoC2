@@ -24,17 +24,23 @@ class VerticalScrollbar:
         self.handle_height = max(30, self.view_height * self.view_height / content_height)
         self.handle_rect.height = self.handle_height
 
-    def handle_event(self, event):
+    def handle_event(self, event, offset=(0, 0)):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if self.handle_rect.collidepoint(event.pos):
+            mx, my = event.pos
+            mx -= offset[0]
+            my -= offset[1]
+            if self.handle_rect.collidepoint(mx, my):
                 self.dragging = True
-                self.drag_offset = event.pos[1] - self.handle_rect.y
+                self.drag_offset = my - self.handle_rect.y
                 return True
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.dragging = False
             return True
         elif event.type == pygame.MOUSEMOTION and self.dragging:
-            new_y = event.pos[1] - self.drag_offset
+            mx, my = event.pos
+            mx -= offset[0]
+            my -= offset[1]
+            new_y = my - self.drag_offset
             min_y = self.rect.y
             max_y = self.rect.y + self.view_height - self.handle_height
             self.handle_rect.y = max(min_y, min(max_y, new_y))
@@ -52,7 +58,10 @@ class VerticalScrollbar:
         max_scroll = self.content_height - self.view_height
         if max_scroll <= 0:
             return 0
-        rel = (self.handle_rect.y - self.rect.y) / (self.view_height - self.handle_height)
+        track_space = self.view_height - self.handle_height
+        if track_space <= 0:
+            return 0
+        rel = (self.handle_rect.y - self.rect.y) / track_space
         return rel * max_scroll
 
     def draw(self, surface):
