@@ -1,15 +1,13 @@
 """
 Simulación de Función Hash Plegamiento.
-Implementa hash por plegamiento con resolución de colisiones.
 """
 import pygame
-# import tkinter as tk  # Comentado temporalmente
-# from tkinter import filedialog  # Comentado temporalmente
 import pickle
 
 import constants as K
 from widgets import draw_input_box, VerticalScrollbar
 from simulations.base import Simulation
+from simulations.dialogs import save_file_dialog, open_file_dialog
 
 class HashFoldSim(Simulation):
     """Simulación de función hash plegamiento"""
@@ -43,8 +41,9 @@ class HashFoldSim(Simulation):
             "result": None, "index": None
         }
 
+        self.history = []
+        self.collision_locked = False
         self.scrollbar = None
-        self.scroll_y = 0
 
     def on_select(self):
         self.N_text = self.keylen_text = self.k_text = ""
@@ -59,6 +58,8 @@ class HashFoldSim(Simulation):
         self._rect_dd_items = []
         self.collision_mode = "LINEAR"
         self.search = {"result": None, "index": None}
+        self.history = []
+        self.collision_locked = False
         self.scrollbar = None
 
     def h1(self, k: int) -> int:
@@ -104,7 +105,7 @@ class HashFoldSim(Simulation):
             if self.scrollbar:
                 delta = -1 if event.button == 4 else 1
                 fake = pygame.event.Event(pygame.MOUSEWHEEL, {"y": delta})
-                self.scrollbar.handle_event(fake, window_offset)
+                self.scrollbar.handle_event(fake)
                 return
 
         # Scroll con flechas
@@ -112,7 +113,7 @@ class HashFoldSim(Simulation):
             if self.scrollbar:
                 delta = 1 if event.key == pygame.K_UP else -1
                 fake = pygame.event.Event(pygame.MOUSEWHEEL, {"y": delta})
-                self.scrollbar.handle_event(fake, window_offset)
+                self.scrollbar.handle_event(fake)
                 return
 
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
@@ -122,8 +123,10 @@ class HashFoldSim(Simulation):
             local_y = my - offy
 
             if self._rect_dd_main and self._rect_dd_main.collidepoint(local_x, local_y):
-                self.dropdown_open = not self.dropdown_open
+                if not self.collision_locked:
+                    self.dropdown_open = not self.dropdown_open
                 return
+
             if self.dropdown_open:
                 for rect, value in self._rect_dd_items:
                     if rect.collidepoint(local_x, local_y):
@@ -171,6 +174,7 @@ class HashFoldSim(Simulation):
         if self.active_field == "N" and self.N_text.isdigit() and int(self.N_text) > 0:
             self.N = int(self.N_text)
             self.table = [None] * self.N
+            self.collision_locked = True
             self.status = f"Tamaño del arreglo fijado en {self.N}"
             self.search = {"result": None, "index": None}
             self.scrollbar = None
@@ -206,98 +210,57 @@ class HashFoldSim(Simulation):
 
     def guardar_estado(self, filepath=None):
         """Guarda el estado en un archivo binario."""
-        import os
         data = {
             "N": self.N,
-            "max_keys": self.max_keys if hasattr(self, 'max_keys') else self.key_len if hasattr(self, 'key_len') else None,
-            "keys": self.keys.copy() if hasattr(self, 'keys') else self.table.copy(),
+            "key_len": self.key_len,
+            "table": self.table.copy(),
+            "collision_mode": self.collision_mode,
             "N_text": self.N_text,
-            "count_text": self.count_text if hasattr(self, 'count_text') else self.keylen_text if hasattr(self, 'keylen_text') else "",
+            "keylen_text": self.keylen_text,
             "status": self.status
         }
-        if hasattr(self, 'collision_mode'):
-            data['collision_mode'] = self.collision_mode
         
         if filepath is None:
-            # Determinar nombre basado en topic_id
-            filename = self.topic_id.replace('.', '_') + '.bin'
-            filepath = f'saves/{filename}'
+            default_name = f"hash_fold_{self.topic_id.replace('.', '_')}.bin"
+            filepath = save_file_dialog(default_name, surface=pygame.display.get_surface())
+            if filepath is None:
+                self.status = "Guardado cancelado"
+                return False
         
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        
-        try:
-            with open(filepath, 'wb') as f:
-                import pickle
-                pickle.dump(data, f)
-            self.status = 'Estado guardado correctamente. Reiniciado.'
-            self.on_select()
-            return True
-        except Exception as e:
-            self.status = f'Error al guardar: {e}'
-            return False
         try:
             with open(filepath, "wb") as f:
                 pickle.dump(data, f)
-            self.status = "Tabla hash plegamiento guardada y simulador reiniciado."
-            self.on_select()
+            self.status = f"Guardado en: {filepath}"
             return True
         except Exception as e:
             self.status = f"Error al guardar: {e}"
             return False
-
     def cargar_estado(self, filepath=None):
-        """Carga el estado desde un archivo binario."""
-        import os
+        """Cargafile el estado desde un archivo binario."""
         if filepath is None:
-            filename = self.topic_id.replace('.', '_') + '.bin'
-            filepath = f'saves/{filename}'
+            filepath = open_file_dialog(surface=pygame.display.get_surface())
+            if filepath is None:
+                self.status = "Carga cancelada"
+                return False
         
-        if not os.path.exists(filepath):
-            self.status = 'No hay archivo guardado'
-            return False
-        
-        try:
-            with open(filepath, 'rb') as f:
-                import pickle
-                data = pickle.load(f)
-            
-            self.N = data.get('N', None)
-            if hasattr(self, 'max_keys'):
-                self.max_keys = data.get('max_keys', None)
-            if hasattr(self, 'key_len'):
-                self.key_len = data.get('max_keys', None)
-            if hasattr(self, 'keys'):
-                self.keys = data.get('keys', []).copy()
-            if hasattr(self, 'table'):
-                self.table = data.get('keys', []).copy()
-            self.N_text = data.get('N_text', '')
-            if hasattr(self, 'count_text'):
-                self.count_text = data.get('count_text', '')
-            if hasattr(self, 'keylen_text'):
-                self.keylen_text = data.get('count_text', '')
-            if hasattr(self, 'collision_mode'):
-                self.collision_mode = data.get('collision_mode', 'LINEAR')
-            self.status = 'Estado cargado correctamente'
-            return True
-        except Exception as e:
-            self.status = f'Error al cargar: {e}'
-            return False
         try:
             with open(filepath, "rb") as f:
                 data = pickle.load(f)
             self.N = data.get("N", None)
             self.key_len = data.get("key_len", None)
-            self.N_text = data.get("N_text", "")
-            self.keylen_text = data.get("keylen_text", "")
-            self.k_text = data.get("k_text", "")
             self.table = data.get("table", []).copy()
             self.collision_mode = data.get("collision_mode", "LINEAR")
-            self.status = "Tabla hash plegamiento cargada correctamente"
+            self.collision_locked = (self.N is not None)
+            self.N_text = data.get("N_text", "")
+            self.keylen_text = data.get("keylen_text", "")
+            self.status = "Estado cargado correctamente"
+            self.history = []
+            self.search.update({"active": False, "probe": 0, "index": None, "result": None, "visited": set()})
+            self.scrollbar = None
             return True
         except Exception as e:
             self.status = f"Error al cargar: {e}"
             return False
-
     def _on_button(self, action):
         if action == "INSERTAR":
             if self.N is None:
@@ -324,6 +287,7 @@ class HashFoldSim(Simulation):
                     insert_idx = idx
                     total_probes = i
                     break
+            self._save_snapshot()
             if insert_idx is None:
                 self.status = "Arreglo lleno"
                 return
@@ -414,7 +378,8 @@ class HashFoldSim(Simulation):
         dd_x = controls_x + 260
         surface.blit(lbl_mode, (dd_x, y+70))
         dd_main = pygame.Rect(dd_x, y+94, 220, 36)
-        pygame.draw.rect(surface, (245,245,245), dd_main, border_radius=6)
+        dd_color = (200, 200, 200) if self.collision_locked else (245, 245, 245)
+        pygame.draw.rect(surface, dd_color, dd_main, border_radius=6)
         pygame.draw.rect(surface, K.DIVIDER, dd_main, 1, border_radius=6)
         sel_label = next(t for t,v in self.collision_modes if v == self.collision_mode)
         surface.blit(K.FONT_S.render(sel_label, True, K.TEXT), (dd_main.x+8, dd_main.y+8))
@@ -433,7 +398,7 @@ class HashFoldSim(Simulation):
         labels = [
             ("Insertar", "INSERTAR"), ("Buscar", "BUSCAR"),
             ("Eliminar", "ELIMINAR"), ("Guardar", "SAVE"),
-            ("Recuperar", "LOAD"), ("Limpiar", "CLEAN")
+            ("Recuperar", "LOAD"), ("Retroceder", "UNDO"), ("Limpiar", "CLEAN")
         ]
 
         self._button_rects = []
@@ -533,7 +498,6 @@ class HashFoldSim(Simulation):
                 surface.blit(K.FONT_S.render(t, True, K.TEXT), (r.x+8, r.y+6))
                 self._rect_dd_items.append((r, v))
                 opt_y += 28
-
 
 
 

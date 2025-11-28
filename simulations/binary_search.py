@@ -4,13 +4,12 @@ Implementa búsqueda binaria con animación paso a paso.
 """
 import pygame
 import bisect
-# import tkinter as tk  # Comentado temporalmente
-# from tkinter import filedialog  # Comentado temporalmente
 import pickle
 
 import constants as K
 from widgets import draw_input_box, VerticalScrollbar
 from simulations.base import Simulation
+from simulations.dialogs import save_file_dialog, open_file_dialog
 
 
 class BinarySearchSim(Simulation):
@@ -40,6 +39,8 @@ class BinarySearchSim(Simulation):
         # Scrollbar para grilla grande
         self.scrollbar = None
         self.scroll_y = 0
+        # Historial para undo (máximo 10 estados)
+        self.history = []
         # Simulación búsqueda binaria
         self.search = {
             "active": False, "target": None,
@@ -57,6 +58,7 @@ class BinarySearchSim(Simulation):
         self._button_rects = []
         self.scrollbar = None
         self.scroll_y = 0
+        self.history = []
         self.search.update({"active": False, "target": None, "left": 0, "right": -1, "mid": None, "timer": 0.0, "result": None})
 
     # Animación de la búsqueda binaria
@@ -139,14 +141,32 @@ class BinarySearchSim(Simulation):
             self.N = int(self.N_text)
             self.status = f"Tamaño del arreglo fijado en {self.N}"
         elif self.active_field == "COUNT" and self.count_text.isdigit() and int(self.count_text) > 0:
-            self.max_keys = int(self.count_text)  # longitud exigida
+            self.max_keys = int(self.count_text)
             self.status = f"Tamaño de clave: {self.max_keys}"
         elif self.active_field == "K" and self.k_text.isdigit():
             self.status = f"Clave lista: {self.k_text}"
 
+    def _save_snapshot(self):
+        """Guarda un snapshot del estado actual para undo."""
+        if len(self.history) >= 10:  # Límite de 10 undos
+            self.history.pop(0)
+        self.history.append({
+            'keys': self.keys.copy(),
+            'status': self.status
+        })
+
+    def _undo(self):
+        """Deshace la última operación."""
+        if not self.history:
+            self.status = "No hay cambios para deshacer"
+            return
+        snapshot = self.history.pop()
+        self.keys = snapshot['keys']
+        self.status = "Cambio deshecho"
+        self.search.update({"active": False, "mid": None, "result": None})
+
     def guardar_estado(self, filepath=None):
         """Guarda el estado en un archivo binario."""
-        import os
         data = {
             "N": self.N,
             "max_keys": self.max_keys,
@@ -155,17 +175,18 @@ class BinarySearchSim(Simulation):
             "count_text": self.count_text,
             "status": self.status
         }
-        if filepath is None:
-            filepath = "saves/binary_search.bin"
         
-        # Crear directorio saves si no existe
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        if filepath is None:
+            default_name = f"binary_search_{self.topic_id.replace('.', '_')}.bin"
+            filepath = save_file_dialog(default_name, surface=pygame.display.get_surface())
+            if filepath is None:
+                self.status = "Guardado cancelado"
+                return False
         
         try:
             with open(filepath, "wb") as f:
                 pickle.dump(data, f)
-            self.status = "Arreglo guardado correctamente. Todo reiniciado."
-            self.on_select()  # Reinicio/reset
+            self.status = f"Guardado en: {filepath}"
             return True
         except Exception as e:
             self.status = f"Error al guardar: {e}"
@@ -173,13 +194,11 @@ class BinarySearchSim(Simulation):
 
     def cargar_estado(self, filepath=None):
         """Carga el estado desde un archivo binario."""
-        import os
         if filepath is None:
-            filepath = "saves/binary_search.bin"
-        
-        if not os.path.exists(filepath):
-            self.status = "No hay archivo guardado"
-            return False
+            filepath = open_file_dialog(surface=pygame.display.get_surface())
+            if filepath is None:
+                self.status = "Carga cancelada"
+                return False
         
         try:
             with open(filepath, "rb") as f:
@@ -190,7 +209,8 @@ class BinarySearchSim(Simulation):
             self.keys = data.get("keys", []).copy()
             self.N_text = data.get("N_text", "")
             self.count_text = data.get("count_text", "")
-            self.status = "Arreglo cargado correctamente"
+            self.status = "Estado cargado correctamente"
+            self.history = []  # Limpiar historial al cargar
             return True
         except Exception as e:
             self.status = f"Error al cargar: {e}"
@@ -221,6 +241,7 @@ class BinarySearchSim(Simulation):
             if i < len(self.keys) and self.keys[i] == k:
                 self.status = "La clave ya existe en el arreglo"; return
 
+            self._save_snapshot()  # Guardar estado antes de modificar
             bisect.insort(self.keys, k)  # inserta manteniendo orden
             self.k_text = ""
             self.status = f"Insertada, total {len(self.keys)}/{self.N}"
@@ -257,6 +278,7 @@ class BinarySearchSim(Simulation):
             k = int(self.k_text)
             i = bisect.bisect_left(self.keys, k)
             if i < len(self.keys) and self.keys[i] == k:
+                self._save_snapshot()  # Guardar estado antes de modificar
                 self.keys.pop(i)
                 self.status = "Eliminada"
             else:
@@ -268,6 +290,9 @@ class BinarySearchSim(Simulation):
 
         elif action == "LOAD":
             self.cargar_estado()
+
+        elif action == "UNDO":
+            self._undo()
 
         elif action == "CLEAN":
             self.N_text = ""
@@ -317,8 +342,9 @@ class BinarySearchSim(Simulation):
             ("Insertar", "INSERTAR"),
             ("Buscar", "BUSCAR"),
             ("Eliminar", "ELIMINAR"),
-            ("Guardar ", "SAVE"),
-            ("Recuperar ", "LOAD"),
+            ("Guardar", "SAVE"),
+            ("Recuperar", "LOAD"),
+            ("Retroceder", "UNDO"),
             ("Limpiar", "CLEAN"),
         ]
         self._button_rects = []

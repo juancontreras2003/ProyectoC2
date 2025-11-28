@@ -4,13 +4,12 @@ Implementa búsqueda secuencial con animación paso a paso.
 """
 import pygame
 import bisect
-# import tkinter as tk  # Comentado temporalmente
-# from tkinter import filedialog  # Comentado temporalmente
 import pickle
 
 import constants as K
 from widgets import draw_input_box, VerticalScrollbar
 from simulations.base import Simulation
+from simulations.dialogs import save_file_dialog, open_file_dialog
 
 
 class SequentialSearchSim(Simulation):
@@ -23,28 +22,30 @@ class SequentialSearchSim(Simulation):
         self.count_text = ""    # "Tamaño de clave"
         self.k_text = ""
         self.N = None
-        self.max_keys = None    # longitud exacta exigida
-        # Datos (orden = inserción)
+        self.max_keys = None  # longitud exigida de la clave
+        # Datos ORDENADOS
         self.keys = []
         self.status = ""
-
         # Foco e interacciones
         self.active_field = None  # "N" | "COUNT" | "K" | None
         self._rect_N = None
         self._rect_COUNT = None
         self._rect_K = None
         self._button_rects = []   # [(rect, action)]
-
         # Layout
         self.max_cols = 10
         self.box_size = 50
         self.spacing = 10
-
-        # Simulación secuencial
+        # Scrollbar para grilla grande
+        self.scrollbar = None
+        self.scroll_y = 0
+        # Historial para undo (máximo 10 estados)
+        self.history = []
+        # Simulación búsqueda secuencial
         self.search = {
             "active": False, "target": None,
-            "idx": 0, "result": None,
-            "timer": 0.0, "pause": 0.55
+            "idx": 0,
+            "timer": 0.0, "pause": 0.55, "result": None
         }
 
     def on_select(self):
@@ -57,9 +58,10 @@ class SequentialSearchSim(Simulation):
         self._button_rects = []
         self.scrollbar = None
         self.scroll_y = 0
-        self.search.update({"active": False, "target": None, "idx": 0, "result": None, "timer": 0.0})
+        self.history = []
+        self.search.update({"active": False, "target": None, "idx": 0, "timer": 0.0, "result": None})
 
-    # Avance de animación secuencial
+    # Animación de la búsqueda secuencial
     def update(self, dt: float):
         if not self.search["active"]:
             return
@@ -68,18 +70,22 @@ class SequentialSearchSim(Simulation):
             return
         self.search["timer"] = 0.0
 
-        i = self.search["idx"]
+        l, r = self.search["left"], self.search["right"]
         k = self.search["target"]
-        if i >= len(self.keys):
-            self.search.update({"active": False, "result": None})
+        if l > r:
+            self.search.update({"active": False, "idx": 0, "result": None})
             self.status = "No encontrada"
             return
 
-        if self.keys[i] == k:
-            self.search.update({"active": False, "result": i})
-            self.status = f"Encontrada en índice {i}"
+        mid = (l + r) // 2
+        self.search["mid"] = mid
+        if self.keys[mid] == k:
+            self.search.update({"active": False, "result": mid})
+            self.status = f"Encontrada en índice {mid}"
+        elif self.keys[mid] < k:
+            self.search["left"] = mid + 1
         else:
-            self.search["idx"] = i + 1
+            self.search["right"] = mid - 1
 
     # ---------------- Eventos ----------------
     def handle_event(self, event, viewport_rect, window_offset):
@@ -135,47 +141,52 @@ class SequentialSearchSim(Simulation):
             self.N = int(self.N_text)
             self.status = f"Tamaño del arreglo fijado en {self.N}"
         elif self.active_field == "COUNT" and self.count_text.isdigit() and int(self.count_text) > 0:
-            self.max_keys = int(self.count_text)  # longitud exigida
+            self.max_keys = int(self.count_text)
             self.status = f"Tamaño de clave: {self.max_keys}"
         elif self.active_field == "K" and self.k_text.isdigit():
             self.status = f"Clave lista: {self.k_text}"
 
+    def _save_snapshot(self):
+        """Guarda un snapshot del estado actual para undo."""
+        if len(self.history) >= 10:  # Límite de 10 undos
+            self.history.pop(0)
+        self.history.append({
+            'keys': self.keys.copy(),
+            'status': self.status
+        })
+
+    def _undo(self):
+        """Deshace la última operación."""
+        if not self.history:
+            self.status = "No hay cambios para deshacer"
+            return
+        snapshot = self.history.pop()
+        self.keys = snapshot['keys']
+        self.status = "Cambio deshecho"
+        self.search.update({"active": False, "idx": 0, "result": None})
+
     def guardar_estado(self, filepath=None):
         """Guarda el estado en un archivo binario."""
-        import os
         data = {
             "N": self.N,
-            "max_keys": self.max_keys if hasattr(self, 'max_keys') else self.key_len if hasattr(self, 'key_len') else None,
-            "keys": self.keys.copy() if hasattr(self, 'keys') else self.table.copy(),
+            "max_keys": self.max_keys,
+            "keys": self.keys.copy(),
             "N_text": self.N_text,
-            "count_text": self.count_text if hasattr(self, 'count_text') else self.keylen_text if hasattr(self, 'keylen_text') else "",
+            "count_text": self.count_text,
             "status": self.status
         }
-        if hasattr(self, 'collision_mode'):
-            data['collision_mode'] = self.collision_mode
         
         if filepath is None:
-            # Determinar nombre basado en topic_id
-            filename = self.topic_id.replace('.', '_') + '.bin'
-            filepath = f'saves/{filename}'
+            default_name = f"sequential_search_{self.topic_id.replace('.', '_')}.bin"
+            filepath = save_file_dialog(default_name, surface=pygame.display.get_surface())
+            if filepath is None:
+                self.status = "Guardado cancelado"
+                return False
         
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        
-        try:
-            with open(filepath, 'wb') as f:
-                import pickle
-                pickle.dump(data, f)
-            self.status = 'Estado guardado correctamente. Reiniciado.'
-            self.on_select()
-            return True
-        except Exception as e:
-            self.status = f'Error al guardar: {e}'
-            return False
         try:
             with open(filepath, "wb") as f:
                 pickle.dump(data, f)
-            self.status = "Arreglo guardado correctamente y reiniciado."
-            self.on_select()  # Reinicia simulador al guardar
+            self.status = f"Guardado en: {filepath}"
             return True
         except Exception as e:
             self.status = f"Error al guardar: {e}"
@@ -183,51 +194,23 @@ class SequentialSearchSim(Simulation):
 
     def cargar_estado(self, filepath=None):
         """Carga el estado desde un archivo binario."""
-        import os
         if filepath is None:
-            filename = self.topic_id.replace('.', '_') + '.bin'
-            filepath = f'saves/{filename}'
+            filepath = open_file_dialog(surface=pygame.display.get_surface())
+            if filepath is None:
+                self.status = "Carga cancelada"
+                return False
         
-        if not os.path.exists(filepath):
-            self.status = 'No hay archivo guardado'
-            return False
-        
-        try:
-            with open(filepath, 'rb') as f:
-                import pickle
-                data = pickle.load(f)
-            
-            self.N = data.get('N', None)
-            if hasattr(self, 'max_keys'):
-                self.max_keys = data.get('max_keys', None)
-            if hasattr(self, 'key_len'):
-                self.key_len = data.get('max_keys', None)
-            if hasattr(self, 'keys'):
-                self.keys = data.get('keys', []).copy()
-            if hasattr(self, 'table'):
-                self.table = data.get('keys', []).copy()
-            self.N_text = data.get('N_text', '')
-            if hasattr(self, 'count_text'):
-                self.count_text = data.get('count_text', '')
-            if hasattr(self, 'keylen_text'):
-                self.keylen_text = data.get('count_text', '')
-            if hasattr(self, 'collision_mode'):
-                self.collision_mode = data.get('collision_mode', 'LINEAR')
-            self.status = 'Estado cargado correctamente'
-            return True
-        except Exception as e:
-            self.status = f'Error al cargar: {e}'
-            return False
         try:
             with open(filepath, "rb") as f:
                 data = pickle.load(f)
-            # Asignación segura
+            # Asigna los datos cargados
             self.N = data.get("N", None)
             self.max_keys = data.get("max_keys", None)
             self.keys = data.get("keys", []).copy()
             self.N_text = data.get("N_text", "")
             self.count_text = data.get("count_text", "")
-            self.status = "Arreglo cargado correctamente"
+            self.status = "Estado cargado correctamente"
+            self.history = []  # Limpiar historial al cargar
             return True
         except Exception as e:
             self.status = f"Error al cargar: {e}"
@@ -249,19 +232,16 @@ class SequentialSearchSim(Simulation):
             if len(self.k_text) < self.max_keys:
                 self.status = f"La clave tiene MENOS de {self.max_keys} dígitos"; return
 
+            # Capacidad y duplicados
             if len(self.keys) >= self.N:
                 self.status = "Arreglo lleno"; return
 
             k = int(self.k_text)
-            # Rechazar duplicados
-            if k in self.keys:
-                self.status = "La clave ya existe en el arreglo"; return
-
-            bisect.insort(self.keys, k)  # inserta manteniendo orden
+            self._save_snapshot()  # Guardar estado antes de modificar
+            self.keys.append(k)  # añadir al final
             self.k_text = ""
             self.status = f"Insertada, total {len(self.keys)}/{self.N}"
-            # cancelar animación en curso si se modifica el arreglo
-            self.search.update({"active": False, "idx": 0, "result": None})
+            self.search.update({"active": False, "idx": 0, "result": None})  # cancelar animación
 
         elif action == "BUSCAR":
             if not self.keys:
@@ -275,9 +255,12 @@ class SequentialSearchSim(Simulation):
                     self.status = f"La clave tiene MENOS de {self.max_keys} dígitos"; return
 
             k = int(self.k_text)
-            # Preparar animación secuencial
-            self.search.update({"active": True, "target": k, "idx": 0, "result": None, "timer": 0.0})
-            self.status = "Buscando (secuencial)..."
+            self.search.update({
+                "active": True, "target": k,
+                "left": 0, "right": len(self.keys) - 1,
+                "mid": None, "timer": 0.0, "result": None
+            })
+            self.status = "Buscando (binaria)..."
 
         elif action == "ELIMINAR":
             if not self.k_text.isdigit():
@@ -291,6 +274,7 @@ class SequentialSearchSim(Simulation):
             k = int(self.k_text)
             try:
                 i = self.keys.index(k)
+                self._save_snapshot()  # Guardar estado antes de modificar
                 self.keys.pop(i)
                 self.status = "Eliminada"
             except ValueError:
@@ -299,8 +283,13 @@ class SequentialSearchSim(Simulation):
 
         elif action == "SAVE":
             self.guardar_estado()
+
         elif action == "LOAD":
             self.cargar_estado()
+
+        elif action == "UNDO":
+            self._undo()
+
         elif action == "CLEAN":
             self.N_text = ""
             self.count_text = ""   
@@ -327,7 +316,6 @@ class SequentialSearchSim(Simulation):
         pygame.draw.line(surface, K.DIVIDER, (sim_rect.x + 12, y), (sim_rect.right - 12, y), 1)
         y += 12
 
-        # Etiquetas e inputs
         lbl_N = K.FONT.render("Tamaño del Arreglo (R):", True, K.SUBTEXT)
         lbl_C = K.FONT.render("Tamaño de clave:", True, K.SUBTEXT)
         lbl_K = K.FONT.render("Clave:", True, K.SUBTEXT)
@@ -350,8 +338,9 @@ class SequentialSearchSim(Simulation):
             ("Insertar", "INSERTAR"),
             ("Buscar", "BUSCAR"),
             ("Eliminar", "ELIMINAR"),
-            ("Guardar ", "SAVE"),
-            ("Recuperar ", "LOAD"),
+            ("Guardar", "SAVE"),
+            ("Recuperar", "LOAD"),
+            ("Retroceder", "UNDO"),
             ("Limpiar", "CLEAN"),
         ]
         self._button_rects = []
@@ -370,7 +359,7 @@ class SequentialSearchSim(Simulation):
         if self.status:
             surface.blit(K.FONT.render(self.status, True, K.SUBTEXT), (base_x, buttons_y + bh + 10))
 
-        # Grilla inferior: resalta idx actual en ámbar y encontrado en verde con scrollbar y centrado
+        # Grilla inferior (ordenada y resaltos de búsqueda) con scrollbar y centrado
         grid_top = buttons_y + bh + 48
         
         if self.N:
@@ -423,25 +412,24 @@ class SequentialSearchSim(Simulation):
                 
                 rect = pygame.Rect(rx, ry, self.box_size, self.box_size)
 
-                # Determina colores para fondo (fill) y borde
+                # Colores por defecto
                 fill = None
                 border = K.ACCENT
 
+                # Resaltar el índice actual en búsqueda (ámbar)
                 if self.search["active"] and self.search["idx"] == idx:
-                    fill = (255, 223, 100)  # color ámbar claro
+                    fill = (255, 223, 100)
                     border = (230, 180, 60)
+                # Resultado encontrado (verde)
                 if self.search["result"] is not None and self.search["result"] == idx:
-                    fill = (100, 240, 160)  # color verde claro
+                    fill = (100, 240, 160)
                     border = (0, 160, 90)
 
-                # Dibuja fondo relleno si aplica
                 if fill:
                     pygame.draw.rect(surface, fill, rect)
-
-                # Dibuja borde
                 pygame.draw.rect(surface, border, rect, 2)
 
-                # Dibuja texto de la clave centrada
+                # Texto de la clave
                 if idx < len(self.keys):
                     text_to_show = str(self.keys[idx]).zfill(self.max_keys or 1)
                     val_img = K.FONT.render(text_to_show, True, K.TEXT)
