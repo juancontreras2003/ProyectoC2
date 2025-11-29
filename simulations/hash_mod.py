@@ -43,7 +43,6 @@ class HashModSim(Simulation):
 
         self.history = []
         self.collision_locked = False
-        self.scrollbar = None
 
     def on_select(self):
         self.N_text = self.keylen_text = self.k_text = ""
@@ -61,6 +60,23 @@ class HashModSim(Simulation):
         self.history = []
         self.collision_locked = False
         self.scrollbar = None
+
+
+    def get_content_height(self, sim_rect: pygame.Rect) -> int:
+        """Calcula la altura total necesaria para renderizar el contenido."""
+        # Altura base para controles (inputs, botones, dropdown, estado)
+        controls_height = 280
+        
+        N = self.N if self.N else 0
+        if N == 0:
+            return controls_height
+        
+        # Calcular altura para la tabla hash
+        # Cada slot tiene altura variable según el número de elementos
+        # Asumir ~30px por slot en promedio
+        hash_table_height = N * 30 + 100  # +100 para márgenes
+        
+        return controls_height + hash_table_height
 
     def h1(self, k: int) -> int:
         return k % self.N
@@ -465,35 +481,20 @@ class HashModSim(Simulation):
             slot_h = max_h / visible_slots
             total_height = slot_h * N
 
-            # Borde del contenedor
+            # Borde del contenedor (toda la altura)
+            container_height = sim_rect.height if sim_rect.height > total_height else total_height
             pygame.draw.rect(surface, K.ACCENT,
-                            (hash_left, top_y, hash_width, max_h),
+                            (hash_left, top_y, hash_width, container_height),
                             2, border_radius=6)
-
-            # Configurar scrollbar con toda la altura real
-            if self.scrollbar is None:
-                self.scrollbar = VerticalScrollbar(
-                    hash_left+hash_width+6, top_y, max_h, total_height)
-            else:
-                self.scrollbar.rect.y = top_y
-                self.scrollbar.view_height = max_h
-                self.scrollbar.update_content_height(total_height)
-            scroll_y = self.scrollbar.get_scroll()
-
-            # Clip para slots
-            clip = pygame.Rect(hash_left, top_y, hash_width, max_h)
-            surface.set_clip(clip)
 
             # Líneas y contenido de cada slot
             for i in range(N+1):
-                y_line = top_y + i*slot_h - scroll_y
+                y_line = top_y + i*slot_h
                 pygame.draw.line(surface, K.ACCENT,
                                 (hash_left, y_line),
                                 (hash_left+hash_width, y_line), 1)
             for idx in range(N):
-                y0 = top_y + idx*slot_h - scroll_y
-                if y0+slot_h < top_y or y0 > top_y+max_h:
-                    continue
+                y0 = top_y + idx*slot_h
                 r = pygame.Rect(hash_left, y0, hash_width, slot_h)
                 val = self.table[idx] if idx < len(self.table) else None
                 if val is self.TOMBSTONE:
@@ -511,22 +512,18 @@ class HashModSim(Simulation):
                     txt = K.FONT.render(str(val).zfill(self.key_len or 1), True, K.TEXT)
                     surface.blit(txt, txt.get_rect(center=r.center))
 
-            surface.set_clip(None)
-
             # Índices visibles
             occupied = {i for i,v in enumerate(self.table)
                         if v not in (None, self.TOMBSTONE)}
             visibles = occupied | {0, N-1} | set(range(0, N, 10))
             for idx in sorted(visibles):
-                y0 = top_y + idx*slot_h - scroll_y
+                y0 = top_y + idx*slot_h
                 mid = y0 + slot_h/2
                 if top_y <= mid <= top_y+max_h:
                     lbl = K.FONT_S.render(str(idx+1), True, K.TEXT)
                     surface.blit(lbl, lbl.get_rect(midright=(hash_left-8, mid)))
 
             # Dibujar scrollbar
-            self.scrollbar.draw(surface)
-
         # Dropdown items
         self._rect_dd_items = []
         if self.dropdown_open:

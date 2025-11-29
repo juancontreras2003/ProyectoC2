@@ -34,8 +34,9 @@ class VerticalScrollbar:
                 self.drag_offset = my - self.handle_rect.y
                 return True
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-            self.dragging = False
-            return True
+            if self.dragging:
+                self.dragging = False
+                return True
         elif event.type == pygame.MOUSEMOTION and self.dragging:
             mx, my = event.pos
             mx -= offset[0]
@@ -46,6 +47,15 @@ class VerticalScrollbar:
             self.handle_rect.y = max(min_y, min(max_y, new_y))
             return True
         elif event.type == pygame.MOUSEWHEEL:
+            # Solo manejar wheel si el mouse está sobre el scrollbar
+            if hasattr(event, 'pos'):
+                mx, my = event.pos
+                mx -= offset[0]
+                my -= offset[1]
+                # Verificar si el mouse está sobre el área del scrollbar
+                if not self.rect.collidepoint(mx, my):
+                    return False
+            
             scroll_amount = -event.y * 20
             new_y = self.handle_rect.y + scroll_amount
             min_y = self.rect.y

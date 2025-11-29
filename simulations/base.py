@@ -26,8 +26,15 @@ class Simulation:
         pass
 
     def update(self, dt: float):
-        """Actualizar estado por frame."""
+        """Actualiza la animación (si hay)."""
         pass
+
+    def get_content_height(self, sim_rect: pygame.Rect) -> int:
+        """
+        Retorna la altura total del contenido a renderizar.
+        Override en subclases si el contenido excede sim_rect.height
+        """
+        return sim_rect.height
 
     def render(self, surface: pygame.Surface, sim_rect: pygame.Rect):
         """Dibujar contenido de la simulación."""

@@ -36,9 +36,6 @@ class BinarySearchSim(Simulation):
         self.max_cols = 10
         self.box_size = 50
         self.spacing = 10
-        # Scrollbar para grilla grande
-        self.scrollbar = None
-        self.scroll_y = 0
         # Historial para undo (máximo 10 estados)
         self.history = []
         # Simulación búsqueda binaria
@@ -56,10 +53,21 @@ class BinarySearchSim(Simulation):
         self.active_field = None
         self._rect_N = self._rect_COUNT = self._rect_K = None
         self._button_rects = []
-        self.scrollbar = None
-        self.scroll_y = 0
-        self.history = []
         self.search.update({"active": False, "target": None, "left": 0, "right": -1, "mid": None, "timer": 0.0, "result": None})
+
+    def get_content_height(self, sim_rect: pygame.Rect) -> int:
+        """Calcula la altura total necesaria para renderizar el contenido."""
+        # Altura estimada para controles (inputs, botones, estado)
+        controls_height = 250
+        
+        if not self.N:
+            return controls_height
+
+        # Calcular altura para la grilla de claves usando N
+        num_rows = (self.N + self.max_cols - 1) // self.max_cols
+        keys_grid_height = num_rows * (self.box_size + self.spacing) + 50  # +50 para margen inferior
+        
+        return controls_height + keys_grid_height
 
     # Animación de la búsqueda binaria
     def update(self, dt: float):
@@ -89,12 +97,6 @@ class BinarySearchSim(Simulation):
 
     # ---------------- Eventos ----------------
     def handle_event(self, event, viewport_rect, window_offset):
-        # Manejar scroll primero
-        if self.scrollbar and event.type in (pygame.MOUSEBUTTONDOWN, pygame.MOUSEBUTTONUP, pygame.MOUSEMOTION, pygame.MOUSEWHEEL):
-            if self.scrollbar.handle_event(event, window_offset):
-                self.scroll_y = self.scrollbar.get_scroll()
-                return
-        
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mx, my = event.pos
             offx, offy = window_offset
@@ -381,38 +383,12 @@ class BinarySearchSim(Simulation):
             if grid_x < base_x:
                 grid_x = base_x
             
-            # Configurar scrollbar si es necesario
-            if grid_height > available_height:
-                if self.scrollbar is None:
-                    self.scrollbar = VerticalScrollbar(
-                        sim_rect.right - 30, grid_top,
-                        available_height, grid_height
-                    )
-                else:
-                    self.scrollbar.rect.x = sim_rect.right - 30
-                    self.scrollbar.rect.y = grid_top
-                    self.scrollbar.view_height = available_height
-                    self.scrollbar.update_content_height(grid_height)
-                
-                scroll_y = self.scrollbar.get_scroll()
-                
-                # Establecer región de clipping
-                clip_rect = pygame.Rect(base_x, grid_top, available_width, available_height)
-                surface.set_clip(clip_rect)
-            else:
-                self.scrollbar = None
-                scroll_y = 0
-            
             # Dibujar grilla
             for idx in range(self.N):
                 fila = idx // self.max_cols
                 col = idx % self.max_cols
                 rx = grid_x + col * self.box_size
-                ry = grid_top + fila * (self.box_size + self.spacing) - scroll_y
-                
-                # Solo dibujar si está visible
-                if ry + self.box_size < grid_top or ry > grid_top + available_height:
-                    continue
+                ry = grid_top + fila * (self.box_size + self.spacing)
                 
                 rect = pygame.Rect(rx, ry, self.box_size, self.box_size)
 
@@ -439,10 +415,3 @@ class BinarySearchSim(Simulation):
                     val_img = K.FONT.render(text_to_show, True, K.TEXT)
                     val_rect = val_img.get_rect(center=rect.center)
                     surface.blit(val_img, val_rect)
-            
-            # Quitar clipping
-            surface.set_clip(None)
-            
-            # Dibujar scrollbar si existe
-            if self.scrollbar:
-                self.scrollbar.draw(surface)
